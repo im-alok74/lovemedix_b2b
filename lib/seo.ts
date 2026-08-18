@@ -33,9 +33,8 @@ export function buildMetadata({
   const url = absoluteUrl(path)
 
   /**
-   * The root layout declares `title.template = "%s · Davaa.in"`, so a page must return
-   * only its own title — returning "X · Davaa.in" here produced "X · Davaa.in · Davaa.in".
-   * Pages with no title of their own opt out of the template entirely.
+   * The root layout appends the LoveMedix brand suffix, so child pages return
+   * only their own title. Pages with no title opt out of the template entirely.
    */
   const resolvedTitle = title ?? { absolute: pageTitle() }
 
@@ -87,7 +86,7 @@ export function organizationJsonld() {
     name: SITE.name,
     legalName: SITE.legalName,
     url: SITE.url,
-    logo: absoluteUrl("/davaa-logo.png"),
+    logo: absoluteUrl("/lovemedix-logo.png"),
     description: SITE.description,
     email: SITE.contact.email,
     telephone: SITE.contact.phone,
