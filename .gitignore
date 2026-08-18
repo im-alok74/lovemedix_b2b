@@ -1,0 +1,31 @@
+# v0 runtime files (should only exist in preview, not in git)
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+instrumentation-client.js
+instrumentation-client.ts
+
+# Common ignores
+node_modules/
+.next/
+.DS_Store
+.vercel
+
+# Secrets — never commit. Only .env.example is tracked.
+.env
+.env.*
+!.env.example
+
+# Build & tooling output
+/out/
+/build/
+*.tsbuildinfo
+.eslintcache
+coverage/
+next-env.d.ts
+
+# Editor / OS noise
+.idea/
+.vscode/*
+!.vscode/extensions.json
+Thumbs.db

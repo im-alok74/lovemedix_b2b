@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Davaa.in">
+  <!--
+    Davaa.in brand mark.
+
+    Hand-authored, ~1KB. It replaces a 597KB file that was a raster logo auto-traced into
+    thousands of <path> elements — which every visitor downloaded before seeing a favicon.
+    The glyph is the same Lucide "pill" used in the header and footer, so the tab icon and
+    the on-page logo are finally the same shape.
+  -->
+  <rect width="512" height="512" rx="112" fill="#0F7B93"/>
+  <g transform="translate(116 116) scale(11.6667)" fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/>
+    <path d="m8.5 8.5 7 7"/>
+  </g>
+</svg>

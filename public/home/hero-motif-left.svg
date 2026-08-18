@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 440" fill="none" role="presentation">
+  <!--
+    Left-edge hero motif.
+
+    Deliberately abstract. An earlier version drew pharmacist and customer characters to match
+    a competitor's banner; hand-authored faces in SVG read as crude smileys next to real
+    typography, and the speech bubbles collided with the headline once `object-cover` cropped
+    the band. Both problems are gone here: no faces, and the file is pinned to the page edge at
+    a fixed height rather than stretched across the whole section, so it cannot reach the copy.
+
+    Single ink colour at low opacity, one warm accent. It reads as texture, not as a picture
+    competing with the white headline.
+  -->
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <!-- Mortar and pestle -->
+    <path d="M40 300h96c0 30-21 54-48 54s-48-24-48-54z" fill="#8FCBBD" fill-opacity="0.20"/>
+    <path d="M32 292h112" stroke="#8FCBBD" stroke-opacity="0.34" stroke-width="9"/>
+    <path d="M118 292 150 236" stroke="#8FCBBD" stroke-opacity="0.30" stroke-width="9"/>
+    <circle cx="154" cy="228" r="13" fill="#8FCBBD" fill-opacity="0.30"/>
+
+    <!-- Medicine bottle -->
+    <rect x="176" y="250" width="86" height="112" rx="14" fill="#8FCBBD" fill-opacity="0.16"/>
+    <rect x="176" y="250" width="86" height="112" rx="14" stroke="#8FCBBD" stroke-opacity="0.28" stroke-width="4"/>
+    <rect x="200" y="228" width="38" height="26" rx="7" fill="#8FCBBD" fill-opacity="0.26"/>
+    <path d="M219 288v36M201 306h36" stroke="#F0803C" stroke-opacity="0.85" stroke-width="10"/>
+
+    <!-- Capsules -->
+    <g transform="translate(84 150) rotate(-28)">
+      <rect x="-38" y="-17" width="76" height="34" rx="17" fill="#CFE9E1" fill-opacity="0.26"/>
+      <path d="M0 -17h21a17 17 0 0 1 0 34H0z" fill="#8FCBBD" fill-opacity="0.55"/>
+    </g>
+    <g transform="translate(228 116) rotate(18)">
+      <rect x="-32" y="-14" width="64" height="28" rx="14" fill="#CFE9E1" fill-opacity="0.22"/>
+      <path d="M0 -14h18a14 14 0 0 1 0 28H0z" fill="#F0803C" fill-opacity="0.55"/>
+    </g>
+
+    <!-- Tablet -->
+    <circle cx="52" cy="220" r="24" fill="#8FCBBD" fill-opacity="0.14"/>
+    <circle cx="52" cy="220" r="24" stroke="#8FCBBD" stroke-opacity="0.30" stroke-width="4"/>
+    <path d="M35 220h34" stroke="#8FCBBD" stroke-opacity="0.30" stroke-width="4"/>
+  </g>
+</svg>

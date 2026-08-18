@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 440" fill="none" role="presentation">
+  <!--
+    Right-edge hero motif. Mirror of hero-motif-left.svg in weight and palette, different
+    objects so the two sides are not an obvious reflection. Same rules: no faces, no text,
+    one ink colour plus a single warm accent, pinned to the page edge at a fixed height.
+  -->
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <!-- Stethoscope -->
+    <path d="M96 96c0 62 34 104 82 104s82-42 82-100"
+          stroke="#8FCBBD" stroke-opacity="0.34" stroke-width="10" fill="none"/>
+    <circle cx="96" cy="88" r="13" fill="#8FCBBD" fill-opacity="0.34"/>
+    <circle cx="260" cy="88" r="13" fill="#8FCBBD" fill-opacity="0.34"/>
+    <path d="M178 200v34" stroke="#8FCBBD" stroke-opacity="0.34" stroke-width="10"/>
+    <circle cx="178" cy="258" r="24" fill="none" stroke="#8FCBBD" stroke-opacity="0.34" stroke-width="10"/>
+
+    <!-- Blister strip -->
+    <rect x="48" y="292" width="130" height="86" rx="14" fill="#8FCBBD" fill-opacity="0.16"/>
+    <rect x="48" y="292" width="130" height="86" rx="14" stroke="#8FCBBD" stroke-opacity="0.28" stroke-width="4"/>
+    <g fill="#8FCBBD" fill-opacity="0.42">
+      <circle cx="76" cy="320" r="10"/><circle cx="113" cy="320" r="10"/><circle cx="150" cy="320" r="10"/>
+      <circle cx="76" cy="352" r="10"/><circle cx="113" cy="352" r="10"/><circle cx="150" cy="352" r="10"/>
+    </g>
+
+    <!-- Cross in a rounded square -->
+    <rect x="212" y="300" width="80" height="80" rx="18" fill="#F0803C" fill-opacity="0.22"/>
+    <path d="M252 320v40M232 340h40" stroke="#F0803C" stroke-opacity="0.9" stroke-width="10"/>
+
+    <!-- Capsule -->
+    <g transform="translate(258 208) rotate(-24)">
+      <rect x="-34" y="-15" width="68" height="30" rx="15" fill="#CFE9E1" fill-opacity="0.24"/>
+      <path d="M0 -15h19a15 15 0 0 1 0 30H0z" fill="#8FCBBD" fill-opacity="0.55"/>
+    </g>
+  </g>
+</svg>

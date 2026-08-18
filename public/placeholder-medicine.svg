@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240" role="img" aria-label="No product photo available">
+  <!--
+    Fallback for a product with no photograph.
+
+    This file did not exist, so every un-photographed product tile on the homepage, the
+    catalogue, the cart and the reorder strip was firing a 404 and rendering a broken
+    image. It is deliberately quiet and text-free: a neutral mark that reads as "photo
+    pending", never as a product.
+  -->
+  <rect width="240" height="240" fill="#F1F4F5"/>
+  <g transform="translate(72 72) scale(4)" fill="none" stroke="#0F7B93" stroke-opacity="0.28" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/>
+    <path d="m8.5 8.5 7 7"/>
+  </g>
+</svg>

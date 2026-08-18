@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240" role="img" aria-label="No image available">
+  <!--
+    Generic image fallback, referenced by the cart, checkout and product detail views.
+    Those call sites append ?height=&width=&query= to the URL; a static SVG ignores the
+    query string harmlessly and still resolves, which is all they need.
+  -->
+  <rect width="240" height="240" fill="#F1F4F5"/>
+  <g fill="none" stroke="#0F7B93" stroke-opacity="0.26" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="66" y="76" width="108" height="88" rx="10"/>
+    <path d="m66 138 26-24 22 20 20-18 40 34"/>
+    <circle cx="102" cy="104" r="9"/>
+  </g>
+</svg>

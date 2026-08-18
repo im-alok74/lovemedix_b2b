@@ -1,0 +1,324 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design tokens.
+ *
+ * The palette is deliberately quiet: one trustworthy teal for actions, a green reserved
+ * for savings, an amber for warnings, and otherwise near-neutral greys. On a pharmacy,
+ * colour should carry meaning — price, stock, prescription status — not decoration.
+ *
+ * Radii are tightened from the previous 0.75rem base (and its 1.75–2rem overrides),
+ * which read as soft and consumer-toy rather than clinical.
+ */
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.21 0.02 250);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.02 250);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.02 250);
+
+  /* Primary: deep, calm teal. Reads as medical trust, passes AA on white. */
+  --primary: oklch(0.52 0.1 205);
+  --primary-foreground: oklch(0.99 0 0);
+
+  --secondary: oklch(0.97 0.005 240);
+  --secondary-foreground: oklch(0.28 0.02 250);
+
+  --muted: oklch(0.97 0.004 240);
+  --muted-foreground: oklch(0.52 0.015 250);
+
+  --accent: oklch(0.96 0.015 205);
+  --accent-foreground: oklch(0.3 0.05 205);
+
+  --destructive: oklch(0.58 0.21 27);
+  --destructive-foreground: oklch(0.99 0 0);
+
+  /* Semantic tokens. Use these instead of raw green-600 / amber-500 utilities so
+     savings and stock states stay consistent across every surface. */
+  --success: oklch(0.58 0.14 150);
+  --success-foreground: oklch(0.99 0 0);
+  --warning: oklch(0.75 0.15 75);
+  --warning-foreground: oklch(0.25 0.05 75);
+  --info: oklch(0.6 0.13 240);
+  --info-foreground: oklch(0.99 0 0);
+
+  --border: oklch(0.92 0.004 250);
+  --input: oklch(0.92 0.004 250);
+  --ring: oklch(0.52 0.1 205);
+
+  --chart-1: oklch(0.52 0.1 205);
+  --chart-2: oklch(0.58 0.14 150);
+  --chart-3: oklch(0.75 0.15 75);
+  --chart-4: oklch(0.6 0.13 240);
+  --chart-5: oklch(0.58 0.21 27);
+
+  /* 8px base radius: crisp, not chunky. */
+  --radius: 0.5rem;
+
+  --sidebar: oklch(0.985 0.002 250);
+  --sidebar-foreground: oklch(0.21 0.02 250);
+  --sidebar-primary: oklch(0.52 0.1 205);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.96 0.005 250);
+  --sidebar-accent-foreground: oklch(0.28 0.02 250);
+  --sidebar-border: oklch(0.92 0.004 250);
+  --sidebar-ring: oklch(0.52 0.1 205);
+}
+
+.dark {
+  --background: oklch(0.16 0.015 250);
+  --foreground: oklch(0.96 0.003 240);
+
+  --card: oklch(0.2 0.017 250);
+  --card-foreground: oklch(0.96 0.003 240);
+  --popover: oklch(0.2 0.017 250);
+  --popover-foreground: oklch(0.96 0.003 240);
+
+  --primary: oklch(0.7 0.11 200);
+  --primary-foreground: oklch(0.16 0.02 250);
+
+  --secondary: oklch(0.26 0.018 250);
+  --secondary-foreground: oklch(0.96 0.003 240);
+
+  --muted: oklch(0.25 0.015 250);
+  --muted-foreground: oklch(0.68 0.012 245);
+
+  --accent: oklch(0.28 0.03 205);
+  --accent-foreground: oklch(0.92 0.02 205);
+
+  --destructive: oklch(0.65 0.19 27);
+  --destructive-foreground: oklch(0.16 0.02 250);
+
+  --success: oklch(0.7 0.14 155);
+  --success-foreground: oklch(0.16 0.02 250);
+  --warning: oklch(0.8 0.14 78);
+  --warning-foreground: oklch(0.2 0.04 78);
+  --info: oklch(0.7 0.12 240);
+  --info-foreground: oklch(0.16 0.02 250);
+
+  --border: oklch(0.3 0.015 250);
+  --input: oklch(0.3 0.015 250);
+  --ring: oklch(0.7 0.11 200);
+
+  --chart-1: oklch(0.7 0.11 200);
+  --chart-2: oklch(0.7 0.14 155);
+  --chart-3: oklch(0.8 0.14 78);
+  --chart-4: oklch(0.7 0.12 240);
+  --chart-5: oklch(0.65 0.19 27);
+
+  --sidebar: oklch(0.19 0.016 250);
+  --sidebar-foreground: oklch(0.96 0.003 240);
+  --sidebar-primary: oklch(0.7 0.11 200);
+  --sidebar-primary-foreground: oklch(0.16 0.02 250);
+  --sidebar-accent: oklch(0.26 0.018 250);
+  --sidebar-accent-foreground: oklch(0.96 0.003 240);
+  --sidebar-border: oklch(0.3 0.015 250);
+  --sidebar-ring: oklch(0.7 0.11 200);
+}
+
+@theme inline {
+  /* Points at the font layout.tsx actually loads. The previous value named "Geist",
+     which was never imported, so every page silently fell back to a system font. */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "Menlo", monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Tabular figures keep price columns and quantity steppers from jittering as digits
+     change — noticeable in carts and inventory tables. */
+  .tabular-nums,
+  [data-price],
+  table td:has([data-price]) {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Visible, consistent focus for keyboard users on every interactive element. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  ::selection {
+    @apply bg-primary/15 text-foreground;
+  }
+
+  /* Respect the OS "reduce motion" setting rather than animating regardless. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* `type="search"` inputs paint a native clear button in Chrome and Safari. The search
+     components render their own X (which also resets the suggestion list — the native one
+     does not, so it left a stale dropdown open over an empty field). Two X's sat side by
+     side; this removes the native one and leaves the component in charge. */
+  input[type="search"]::-webkit-search-cancel-button,
+  input[type="search"]::-webkit-search-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* Standard page container. One definition instead of `container mx-auto px-4`
+     repeated on every section with slightly different padding each time. */
+  .page-container {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  /* The single elevation used across the app. Restraint here is what makes the UI read
+     as minimal; the previous cards stacked gradients, blur and 60px shadows. */
+  .surface {
+    @apply rounded-lg border border-border bg-card;
+  }
+
+  .surface-hover {
+    @apply transition-colors duration-150 hover:border-foreground/20;
+  }
+
+  /* Numeric emphasis for prices. */
+  .price {
+    @apply font-semibold tabular-nums text-foreground;
+  }
+
+  .price-strike {
+    @apply text-sm tabular-nums text-muted-foreground line-through;
+  }
+
+  .price-save {
+    @apply text-sm font-bold text-[color:var(--success)];
+  }
+
+  /* Skeleton shimmer used by every loading state. */
+  .skeleton {
+    @apply animate-pulse rounded-md bg-muted;
+  }
+
+  /* -------------------------------------------------------------------------
+   * Landing-page type scale.
+   *
+   * Deliberately larger and heavier than the app default. The homepage is read by
+   * someone on a 5-inch 720p screen, often outdoors, often without reading glasses,
+   * and it is the first thing that has to convince them this is a real pharmacy.
+   * The rest of the app — dashboards, tables, checkout — keeps the tighter scale,
+   * which is why these are opt-in classes rather than a change to `body`.
+   *
+   * Before this, every section heading on the homepage was the identical
+   * `text-xl font-semibold sm:text-2xl` and there was not one `font-bold` on the
+   * page, so nothing looked more important than anything else.
+   *
+   * Rules for this page: nothing below 14px, no `font-normal` on a heading.
+   * ---------------------------------------------------------------------- */
+
+  .home-h1 {
+    @apply text-[30px] font-extrabold leading-[1.12] tracking-[-0.02em] text-foreground sm:text-[44px] lg:text-5xl;
+  }
+
+  .home-h2 {
+    @apply text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-[30px];
+  }
+
+  /* Card and tile titles. */
+  .home-h3 {
+    @apply text-base font-bold leading-snug text-foreground sm:text-lg;
+  }
+
+  .home-body {
+    @apply text-base leading-7 text-muted-foreground;
+  }
+
+  /* Captions, counts, distances. The floor for this page — never `text-xs`. */
+  .home-meta {
+    @apply text-sm font-medium leading-normal text-muted-foreground;
+  }
+
+  .home-link {
+    @apply text-base font-bold text-primary underline-offset-4 hover:underline;
+  }
+
+  /* Hide scrollbars on horizontal category rails while keeping them scrollable. */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media print {
+  .no-print,
+  header,
+  footer,
+  nav {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+}

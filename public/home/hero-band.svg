@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 460" fill="none" role="presentation">
+  <!--
+    Hero band illustration: pharmacists and customers either side of the search column.
+
+    Three constraints shaped this file.
+
+    1. It is served with `unoptimized` on next/image. Next's image optimiser returns HTTP 400 for
+       SVG unless `dangerouslyAllowSVG` is set, and that flag would apply to every remote image
+       host in next.config.mjs — not something to switch on for one decorative backdrop. So this
+       is passed through to the browser verbatim, which is why it deliberately contains no
+       scripting, no externally referenced image and no remote font.
+
+    2. Detail lives ONLY in the outer thirds. The middle (x 470-970) carries the headline, the
+       search field and the pincode row. The image is `object-cover`, so on a 360px phone the
+       crop lands on that empty middle and the band degrades to clean colour rather than to half
+       a face behind the search box.
+
+    3. Figures are drawn in tints of the band itself with a single warm accent. Full-colour
+       characters over a dark band would compete with the white headline, which is the one thing
+       on this section that has to be read.
+  -->
+  <defs>
+    <linearGradient id="band" x1="0" y1="0" x2="1440" y2="460" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0E3A34"/>
+      <stop offset="0.5" stop-color="#134D45"/>
+      <stop offset="1" stop-color="#0A2E2A"/>
+    </linearGradient>
+
+    <!-- Keeps the centre column darker than the art so white type holds contrast at any crop. -->
+    <radialGradient id="centreShade" cx="0.5" cy="0.5" r="0.6">
+      <stop offset="0" stop-color="#08251F" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#08251F" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1440" height="460" fill="url(#band)"/>
+
+  <!-- Figure palette -->
+  <g stroke-linecap="round" stroke-linejoin="round">
+
+    <!-- ================= LEFT GROUP ================= -->
+
+    <!-- Speech bubble with prescription lines -->
+    <g>
+      <rect x="286" y="66" width="118" height="80" rx="14" fill="#CFE9E1" fill-opacity="0.92"/>
+      <path d="M312 146l-4 26 26-26z" fill="#CFE9E1" fill-opacity="0.92"/>
+      <g stroke="#14514A" stroke-opacity="0.55" stroke-width="6">
+        <path d="M306 92h64"/><path d="M306 108h78"/><path d="M306 124h48"/>
+      </g>
+      <circle cx="290" cy="70" r="19" fill="#F07E3C"/>
+      <path d="M290 61v18M281 70h18" stroke="#fff" stroke-width="5"/>
+    </g>
+
+    <!-- Man with glasses, holding a medicine bottle -->
+    <g>
+      <path d="M118 460v-96c0-30 24-54 54-54h26c30 0 54 24 54 54v96z" fill="#2C6157"/>
+      <path d="M150 310h34v34c0 9-8 16-17 16s-17-7-17-16z" fill="#9FC7BE"/>
+      <circle cx="167" cy="270" r="40" fill="#B4D6CD"/>
+      <path d="M127 268c0-24 18-42 40-42s40 18 40 42c0-14-14-20-40-20s-40 6-40 20z" fill="#173F39"/>
+      <g stroke="#173F39" stroke-width="4" fill="none">
+        <circle cx="153" cy="270" r="12"/><circle cx="183" cy="270" r="12"/><path d="M165 270h6"/>
+      </g>
+      <path d="M143 292c8 7 33 7 41 0" stroke="#173F39" stroke-width="4" fill="none"/>
+      <!-- arm + bottle -->
+      <path d="M226 372c14 6 24 18 24 32" stroke="#2C6157" stroke-width="26" fill="none"/>
+      <rect x="234" y="392" width="40" height="58" rx="8" fill="#F07E3C"/>
+      <rect x="244" y="380" width="20" height="14" rx="4" fill="#CFE9E1"/>
+      <path d="M254 408v22M243 419h22" stroke="#fff" stroke-width="5"/>
+    </g>
+
+    <!-- Woman with a bun, holding a pack -->
+    <g>
+      <path d="M246 460v-84c0-28 22-50 50-50h20c28 0 50 22 50 50v84z" fill="#3A7268"/>
+      <path d="M280 326h30v30c0 8-7 14-15 14s-15-6-15-14z" fill="#9FC7BE"/>
+      <circle cx="295" cy="290" r="36" fill="#B4D6CD"/>
+      <path d="M259 288c0-22 16-38 36-38s36 16 36 38c0-13-13-18-36-18s-36 5-36 18z" fill="#173F39"/>
+      <circle cx="331" cy="256" r="16" fill="#173F39"/>
+      <g fill="#173F39"><circle cx="283" cy="290" r="4"/><circle cx="307" cy="290" r="4"/></g>
+      <path d="M285 306c6 5 14 5 20 0" stroke="#173F39" stroke-width="4" fill="none"/>
+      <!-- arm + pack -->
+      <path d="M258 388c-13 5-22 17-22 30" stroke="#3A7268" stroke-width="24" fill="none"/>
+      <rect x="206" y="404" width="52" height="40" rx="7" fill="#CFE9E1"/>
+      <g fill="#2C6157"><circle cx="221" cy="418" r="5"/><circle cx="238" cy="418" r="5"/><circle cx="221" cy="432" r="5"/><circle cx="238" cy="432" r="5"/></g>
+    </g>
+
+    <!-- ================= RIGHT GROUP ================= -->
+
+    <!-- Chat bubble with a heart -->
+    <g>
+      <rect x="1036" y="60" width="112" height="76" rx="14" fill="#CFE9E1" fill-opacity="0.92"/>
+      <path d="M1112 136l6 26-28-26z" fill="#CFE9E1" fill-opacity="0.92"/>
+      <path d="M1092 88c-6-8-19-6-19 6 0 11 13 20 19 24 6-4 19-13 19-24 0-12-13-14-19-6z" fill="#F07E3C"/>
+      <g stroke="#14514A" stroke-opacity="0.5" stroke-width="6"><path d="M1050 82h22"/><path d="M1050 100h16"/></g>
+    </g>
+
+    <!-- Floating capsules -->
+    <g>
+      <g transform="translate(1000 214) rotate(-32)">
+        <rect x="-32" y="-15" width="64" height="30" rx="15" fill="#CFE9E1"/>
+        <path d="M0 -15h17a15 15 0 0 1 0 30H0z" fill="#5FCFB4"/>
+      </g>
+      <g transform="translate(1392 132) rotate(28)">
+        <rect x="-30" y="-14" width="60" height="28" rx="14" fill="#CFE9E1"/>
+        <path d="M0 -14h16a14 14 0 0 1 0 28H0z" fill="#F07E3C"/>
+      </g>
+    </g>
+
+    <!-- Doctor with stethoscope -->
+    <g>
+      <path d="M1112 460v-92c0-30 24-54 54-54h24c30 0 54 24 54 54v92z" fill="#CFE9E1"/>
+      <path d="M1152 314h34v32c0 9-8 16-17 16s-17-7-17-16z" fill="#9FC7BE"/>
+      <path d="M1152 314l26 30 26-30 20 10-30 42h-32l-30-42z" fill="#EAF7F2"/>
+      <circle cx="1178" cy="274" r="40" fill="#B4D6CD"/>
+      <path d="M1138 272c0-24 18-42 40-42s40 18 40 42c0-14-14-20-40-20s-40 6-40 20z" fill="#173F39"/>
+      <g stroke="#173F39" stroke-width="4" fill="none">
+        <circle cx="1164" cy="274" r="12"/><circle cx="1194" cy="274" r="12"/><path d="M1176 274h6"/>
+      </g>
+      <path d="M1166 296c7 6 17 6 24 0" stroke="#173F39" stroke-width="4" fill="none"/>
+      <!-- stethoscope -->
+      <path d="M1160 356c0 34 20 56 44 56s44-22 44-52" stroke="#2C6157" stroke-width="8" fill="none"/>
+      <circle cx="1248" cy="352" r="12" fill="none" stroke="#2C6157" stroke-width="8"/>
+    </g>
+
+    <!-- Woman waving, holding a strip -->
+    <g>
+      <path d="M1240 460v-80c0-28 22-50 50-50h18c28 0 50 22 50 50v80z" fill="#3A7268"/>
+      <path d="M1274 330h30v28c0 8-7 14-15 14s-15-6-15-14z" fill="#9FC7BE"/>
+      <circle cx="1289" cy="294" r="36" fill="#B4D6CD"/>
+      <path d="M1253 292c0-22 16-38 36-38s36 16 36 38c0-13-13-18-36-18s-36 5-36 18z" fill="#173F39"/>
+      <path d="M1253 292c-6 18-4 38 4 50l14-14z" fill="#173F39"/>
+      <g fill="#173F39"><circle cx="1277" cy="294" r="4"/><circle cx="1301" cy="294" r="4"/></g>
+      <path d="M1279 310c6 5 14 5 20 0" stroke="#173F39" stroke-width="4" fill="none"/>
+      <!-- raised waving arm -->
+      <path d="M1344 386c16-6 26-22 26-40" stroke="#3A7268" stroke-width="24" fill="none"/>
+      <circle cx="1374" cy="330" r="17" fill="#B4D6CD"/>
+    </g>
+  </g>
+
+  <!-- Applied last so it sits over the art, never under it. -->
+  <rect width="1440" height="460" fill="url(#centreShade)"/>
+</svg>

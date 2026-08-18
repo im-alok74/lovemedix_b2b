@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 400" width="1600" height="400" preserveAspectRatio="xMidYMid slice" role="presentation">
+  <!-- Very low-contrast band behind the help section. Warm, near-flat, no imagery. -->
+  <defs>
+    <linearGradient id="band" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FBF4E9"/>
+      <stop offset="1" stop-color="#EAF4F6"/>
+    </linearGradient>
+    <filter id="b" x="-20%" y="-40%" width="140%" height="180%">
+      <feGaussianBlur stdDeviation="70"/>
+    </filter>
+  </defs>
+  <rect width="1600" height="400" fill="url(#band)"/>
+  <g filter="url(#b)" opacity="0.35">
+    <ellipse cx="270" cy="330" rx="330" ry="150" fill="#F0C98F"/>
+    <ellipse cx="1340" cy="80" rx="330" ry="150" fill="#8ECBD9"/>
+  </g>
+</svg>
