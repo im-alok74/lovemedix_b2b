@@ -1,28 +1,92 @@
 import Link from "next/link"
-import { ArrowRight, Building2, ClipboardCheck, FileText, PackageCheck, ShieldCheck, Truck } from "lucide-react"
+import {
+  ArrowRight,
+  BadgeCheck,
+  Building2,
+  CheckCircle2,
+  ClipboardCheck,
+  FileText,
+  PackageCheck,
+  ShieldCheck,
+  Sparkles,
+  Truck,
+} from "lucide-react"
 
 const capabilities = [
-  { icon: PackageCheck, title: "Verified medicine catalog", text: "Source active, compliant inventory uploaded directly by approved distributors." },
-  { icon: Truck, title: "Bulk procurement", text: "Build wholesale orders with transparent pricing, tax, stock and fulfillment status." },
-  { icon: FileText, title: "Demand requests", text: "Raise new-medicine or out-of-stock requests and track the response from your network." },
-  { icon: ClipboardCheck, title: "Approval-led access", text: "Every pharmacy and distributor is reviewed before the platform unlocks its panel." },
+  { icon: PackageCheck, title: "Verified catalog", text: "Discover active, compliant inventory uploaded by approved distributors." },
+  { icon: Truck, title: "Reliable fulfillment", text: "Place bulk orders with clear pricing, availability, tax and dispatch status." },
+  { icon: FileText, title: "Medicine requests", text: "Request new or unavailable medicines and track every response in one place." },
+  { icon: ClipboardCheck, title: "Trusted access", text: "Every pharmacy and distributor is reviewed before access is approved." },
+]
+
+const steps = [
+  ["01", "Create your account", "Share your business details and required documents."],
+  ["02", "Get verified", "Our admin team reviews your registration and approves your workspace."],
+  ["03", "Start operating", "Source medicines, manage requests and keep your operations moving."],
 ]
 
 export default function HomePage() {
-  return <main className="min-h-screen bg-background text-foreground">
-    <header className="border-b border-border bg-background/95">
-      <div className="page-container flex h-16 items-center justify-between">
-        <Link href="/" className="flex items-center gap-3 font-semibold tracking-tight"><span className="grid size-9 place-items-center rounded-md bg-primary text-primary-foreground"><ShieldCheck className="size-5" /></span><span>LoveMedix <span className="text-muted-foreground">B2B</span></span></Link>
-        <nav className="flex items-center gap-3"><Link href="/sign-in" className="rounded-md px-4 py-2 text-sm font-medium hover:bg-muted">Sign in</Link><Link href="/register" className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Register business</Link></nav>
-      </div>
-    </header>
-    <section className="border-b border-border bg-muted/30">
-      <div className="page-container grid gap-12 py-20 lg:grid-cols-[1.1fr_.9fr] lg:items-center lg:py-28">
-        <div><div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1 text-sm text-muted-foreground"><Building2 className="size-4 text-primary" /> Built for India&apos;s medicine supply chain</div><h1 className="max-w-3xl text-balance text-5xl font-semibold tracking-tight sm:text-6xl">Wholesale medicines, with trust built in.</h1><p className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground">LoveMedix connects verified pharmacies with approved distributors so teams can buy in bulk, request hard-to-find medicines, and run their shop with one dependable workspace.</p><div className="mt-8 flex flex-wrap gap-3"><Link href="/register" className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-3 font-semibold text-primary-foreground">Get started <ArrowRight className="size-4" /></Link><Link href="/sign-in" className="rounded-md border border-border bg-background px-5 py-3 font-semibold">Sign in to your panel</Link></div></div>
-        <div className="surface p-6 shadow-sm"><div className="flex items-center justify-between border-b border-border pb-5"><div><p className="text-sm text-muted-foreground">Platform status</p><p className="mt-1 font-semibold">Verified network</p></div><span className="rounded-full bg-success/15 px-3 py-1 text-sm font-medium text-success">Approval led</span></div><div className="space-y-5 py-6"><div className="flex gap-4"><span className="grid size-10 shrink-0 place-items-center rounded-md bg-accent text-accent-foreground"><ShieldCheck className="size-5" /></span><div><p className="font-medium">Documents reviewed</p><p className="mt-1 text-sm leading-6 text-muted-foreground">Business licenses, GST and registration documents are reviewed by admin.</p></div></div><div className="flex gap-4"><span className="grid size-10 shrink-0 place-items-center rounded-md bg-accent text-accent-foreground"><PackageCheck className="size-5" /></span><div><p className="font-medium">One connected workflow</p><p className="mt-1 text-sm leading-6 text-muted-foreground">Catalog, purchasing, requests, invoices and pharmacy ledger in one place.</p></div></div></div></div>
-      </div>
-    </section>
-    <section className="page-container py-16"><div className="max-w-2xl"><p className="text-sm font-semibold uppercase tracking-[0.16em] text-primary">A better operating system</p><h2 className="mt-3 text-3xl font-semibold tracking-tight">Everything your medicine business needs to move with confidence.</h2></div><div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">{capabilities.map(({ icon: Icon, title, text }) => <article key={title} className="surface p-5"><Icon className="size-6 text-primary" /><h3 className="mt-6 font-semibold">{title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{text}</p></article>)}</div></section>
-    <section className="border-t border-border bg-primary py-14 text-primary-foreground"><div className="page-container flex flex-col justify-between gap-6 md:flex-row md:items-center"><div><h2 className="text-2xl font-semibold">Ready to join the verified network?</h2><p className="mt-2 text-primary-foreground/75">Register your pharmacy or distribution business for admin approval.</p></div><Link href="/register" className="inline-flex items-center gap-2 self-start rounded-md bg-primary-foreground px-5 py-3 font-semibold text-primary">Register your business <ArrowRight className="size-4" /></Link></div></section>
-  </main>
+  return (
+    <main id="main-content" className="min-h-screen overflow-hidden bg-background text-foreground">
+      <header className="relative z-10 border-b border-border/70 bg-background/85 backdrop-blur-xl">
+        <div className="page-container flex h-[72px] items-center justify-between">
+          <Link href="/" className="flex items-center gap-3" aria-label="LoveMedix home">
+            <span className="grid size-10 place-items-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+              <ShieldCheck className="size-5" aria-hidden="true" />
+            </span>
+            <span className="text-lg font-bold tracking-[-0.03em]">LoveMedix</span>
+          </Link>
+          <nav className="flex items-center gap-2" aria-label="Main navigation">
+            <Link href="/sign-in" className="rounded-lg px-4 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">Sign in</Link>
+            <Link href="/register" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/15 transition-transform hover:-translate-y-0.5">Register <ArrowRight className="size-4" aria-hidden="true" /></Link>
+          </nav>
+        </div>
+      </header>
+
+      <section className="relative border-b border-border/70">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_18%,oklch(0.7_0.11_200_/_0.16),transparent_34%),linear-gradient(135deg,transparent_0%,oklch(0.7_0.11_200_/_0.04)_100%)]" />
+        <div className="page-container relative grid gap-12 py-16 sm:py-20 lg:grid-cols-[1.08fr_.92fr] lg:items-center lg:gap-16 lg:py-28">
+          <div>
+            <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3.5 py-2 text-sm font-semibold text-primary">
+              <Sparkles className="size-4" aria-hidden="true" /> Built for better medicine operations
+            </div>
+            <h1 className="max-w-3xl text-balance text-5xl font-extrabold leading-[1.02] tracking-[-0.055em] sm:text-6xl lg:text-[72px]">Move medicine supply forward.</h1>
+            <p className="mt-7 max-w-xl text-pretty text-lg leading-8 text-muted-foreground sm:text-xl">LoveMedix brings verified pharmacies and distributors together to source medicines, manage supply and serve communities with confidence.</p>
+            <div className="mt-9 flex flex-wrap gap-3">
+              <Link href="/register" className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3.5 font-semibold text-primary-foreground shadow-xl shadow-primary/20 transition-transform hover:-translate-y-0.5">Create your account <ArrowRight className="size-4" aria-hidden="true" /></Link>
+              <Link href="/sign-in" className="inline-flex items-center rounded-lg border border-border bg-card px-5 py-3.5 font-semibold transition-colors hover:bg-muted">Open your workspace</Link>
+            </div>
+            <div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-2"><CheckCircle2 className="size-4 text-success" aria-hidden="true" /> Admin-verified access</span>
+              <span className="inline-flex items-center gap-2"><CheckCircle2 className="size-4 text-success" aria-hidden="true" /> Built for India</span>
+            </div>
+          </div>
+
+          <div className="relative">
+            <div className="absolute -inset-4 rounded-[2rem] bg-primary/10 blur-3xl" />
+            <div className="relative rounded-2xl border border-border bg-card/95 p-5 shadow-2xl shadow-primary/10 sm:p-7">
+              <div className="flex items-start justify-between border-b border-border pb-5">
+                <div><p className="text-sm font-medium text-muted-foreground">Your operating network</p><p className="mt-1 text-2xl font-bold tracking-tight">Ready when you are</p></div>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-success/15 px-3 py-1.5 text-xs font-bold text-success"><span className="size-1.5 rounded-full bg-success" /> Live network</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 py-6">
+                <div className="rounded-xl bg-muted/60 p-4"><BadgeCheck className="size-5 text-primary" aria-hidden="true" /><p className="mt-5 text-2xl font-bold">100%</p><p className="mt-1 text-sm text-muted-foreground">reviewed access</p></div>
+                <div className="rounded-xl bg-muted/60 p-4"><Building2 className="size-5 text-primary" aria-hidden="true" /><p className="mt-5 text-2xl font-bold">One</p><p className="mt-1 text-sm text-muted-foreground">connected workspace</p></div>
+              </div>
+              <div className="rounded-xl border border-primary/20 bg-primary/10 p-4"><div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground"><ShieldCheck className="size-4" aria-hidden="true" /></span><div><p className="text-sm font-semibold">A trusted way to work</p><p className="mt-0.5 text-sm text-muted-foreground">Catalog, orders, requests and billing together.</p></div></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="page-container py-20 sm:py-24">
+        <div className="max-w-2xl"><p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Everything connected</p><h2 className="mt-4 text-balance text-3xl font-bold tracking-[-0.04em] sm:text-4xl">A simpler way to keep your supply moving.</h2><p className="mt-4 text-lg leading-8 text-muted-foreground">From your first medicine search to final dispatch, LoveMedix gives your team a clear, dependable workflow.</p></div>
+        <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">{capabilities.map(({ icon: Icon, title, text }) => <article key={title} className="group rounded-2xl border border-border bg-card p-6 transition-all hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5"><span className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground"><Icon className="size-5" aria-hidden="true" /></span><h3 className="mt-7 text-lg font-bold">{title}</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{text}</p></article>)}</div>
+      </section>
+
+      <section className="border-y border-border bg-muted/30"><div className="page-container grid gap-10 py-20 lg:grid-cols-[.7fr_1.3fr] lg:items-center"><div><p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Start with confidence</p><h2 className="mt-4 text-balance text-3xl font-bold tracking-[-0.04em] sm:text-4xl">Your next step is simple.</h2></div><div className="grid gap-4 md:grid-cols-3">{steps.map(([number, title, text]) => <div key={number} className="rounded-2xl border border-border bg-card p-5"><p className="font-mono text-sm font-bold text-primary">{number}</p><h3 className="mt-8 font-bold">{title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{text}</p></div>)}</div></div></section>
+
+      <section className="bg-primary text-primary-foreground"><div className="page-container flex flex-col gap-7 py-14 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Make every medicine movement count.</h2><p className="mt-2 max-w-xl leading-7 text-primary-foreground/75">Join LoveMedix and give your pharmacy or distribution team a better way to operate.</p></div><Link href="/register" className="inline-flex shrink-0 items-center gap-2 self-start rounded-lg bg-primary-foreground px-5 py-3.5 font-bold text-primary transition-transform hover:-translate-y-0.5">Get started <ArrowRight className="size-4" aria-hidden="true" /></Link></div></section>
+    </main>
+  )
 }

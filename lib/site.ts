@@ -8,9 +8,9 @@
 export const SITE = {
   name: "LoveMedix",
   legalName: "LoveMedix Healthcare Private Limited",
-  tagline: "Verified wholesale medicine supply",
+  tagline: "A better way to move medicine",
   description:
-    "LoveMedix is a verified B2B medicine procurement platform connecting approved pharmacies and distributors across India.",
+    "LoveMedix connects verified pharmacies and distributors across India with trusted medicine sourcing, procurement and business operations.",
 
   url: (process.env.NEXT_PUBLIC_SITE_URL || "https://lovemedix.in").replace(/\/$/, ""),
 
