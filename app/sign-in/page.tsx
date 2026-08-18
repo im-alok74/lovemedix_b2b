@@ -1,0 +1,4 @@
+import Link from "next/link"
+import { AuthForm } from "@/components/auth-form"
+
+export default function SignInPage() { return <main className="grid min-h-screen place-items-center bg-muted/30 p-6"><div className="w-full max-w-md"><Link href="/" className="mb-8 block text-center text-xl font-semibold">LoveMedix <span className="text-muted-foreground">B2B</span></Link><div className="surface p-6 sm:p-8"><h1 className="text-2xl font-semibold">Sign in to your panel</h1><p className="mt-2 text-sm leading-6 text-muted-foreground">Approved pharmacies, distributors and admins can access their workspace.</p><AuthForm mode="sign-in" /></div><p className="mt-5 text-center text-sm text-muted-foreground">New business? <Link href="/register" className="font-semibold text-primary">Register for approval</Link></p></div></main> }

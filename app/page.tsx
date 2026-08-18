@@ -1,225 +1,28 @@
 import Link from "next/link"
-import { Suspense } from "react"
+import { ArrowRight, Building2, ClipboardCheck, FileText, PackageCheck, ShieldCheck, Truck } from "lucide-react"
 
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { FaqSection } from "@/components/faq-section"
-import { JsonLd } from "@/components/seo/json-ld"
-import { SupportSection } from "@/components/support-section"
-import { ArticlesTeaser } from "@/components/home/articles-teaser"
-import { AvailableNearYou } from "@/components/home/available-near-you"
-import { BestValue, ThemedRails } from "@/components/home/best-value"
-import { Bestsellers } from "@/components/home/bestsellers"
-import { CategoryTiles } from "@/components/home/category-tiles"
-import { DoctorsRail } from "@/components/home/doctors-rail"
-import { HealthConditionsRail, type HealthCondition } from "@/components/home/health-conditions-rail"
-import { HealthPackages } from "@/components/home/health-packages"
-import { Hero } from "@/components/home/hero"
-import { NearbyPharmacies } from "@/components/home/nearby-pharmacies"
-import { PopularBrands } from "@/components/home/popular-brands"
-import { QuickActions } from "@/components/home/quick-actions"
-import { ReorderStrip } from "@/components/home/reorder-strip"
-import { SeoLinks } from "@/components/home/seo-links"
-import { TopManufacturers } from "@/components/home/top-manufacturers"
-import { TrustStrip } from "@/components/home/trust-strip"
-import { cachedPublic, TAGS, TTL } from "@/lib/cache"
-import { query } from "@/lib/db"
-import { HOME_TOP_FAQS } from "@/lib/faqs"
-import { buildMetadata, faqJsonld } from "@/lib/seo"
-import { SITE } from "@/lib/site"
-
-export const metadata = buildMetadata({
-  description: SITE.description,
-  path: "/",
-  keywords: [
-    "online medicine delivery India",
-    "buy prescription medicines online",
-    "generic medicine substitutes",
-    "order medicines online",
-  ],
-})
-
-/**
- * Homepage.
- *
- * Rebuilt around one finding: the page was a brochure. Roughly 1,700 words, four
- * photographs, no `font-bold` anywhere, ten separate prescription calls-to-action, and
- * nine section headings styled identically so nothing looked more important than anything
- * else. For someone in Patna on a cheap Android that is a wall of small grey text with
- * nothing to look at.
- *
- * The rebuild inverts that. Every shopping section leads with real photography from live
- * pharmacy inventory, headings are bold and sized in three tiers, body copy has a 16px
- * floor, and there is exactly one prescription CTA in the page body.
- *
- * Sections are ordered by what a first-time visitor needs, and every data-driven one
- * returns `null` rather than rendering a heading over an empty grid — so an early-stage
- * marketplace reads as a short, deliberate page instead of a broken one.
- */
-
-// Kept for the data cache. Note the page itself is dynamic regardless: Header reads
-// cookies for the session and the delivery location, so this does not make it static.
-export const revalidate = 300
-
-async function loadHealthConditions(): Promise<HealthCondition[]> {
-  try {
-    return await query<HealthCondition>`
-      SELECT id, name, slug, description, icon
-      FROM health_conditions
-      WHERE is_active
-      ORDER BY display_order ASC
-      LIMIT 15
-    `
-  } catch (error) {
-    console.error("[homepage] health conditions failed:", error)
-    return []
-  }
-}
-
-/**
- * Cached: the health-condition taxonomy is seeded data that changes only when an admin
- * edits it, yet it was queried on every homepage render.
- */
-const getHealthConditions = cachedPublic(loadHealthConditions, ["health-conditions-rail"], {
-  revalidate: TTL.TAXONOMY,
-  tags: [TAGS.taxonomy],
-})
-
-/** Fixed-height placeholder so streaming a section in cannot shift the page. */
-function RailSkeleton({ height = "h-64" }: { height?: string }) {
-  return (
-    <div className="page-container py-8">
-      <div className={`skeleton ${height} w-full`} />
-    </div>
-  )
-}
-
-async function HealthConditions() {
-  const conditions = await getHealthConditions()
-  return <HealthConditionsRail conditions={conditions} />
-}
+const capabilities = [
+  { icon: PackageCheck, title: "Verified medicine catalog", text: "Source active, compliant inventory uploaded directly by approved distributors." },
+  { icon: Truck, title: "Bulk procurement", text: "Build wholesale orders with transparent pricing, tax, stock and fulfillment status." },
+  { icon: FileText, title: "Demand requests", text: "Raise new-medicine or out-of-stock requests and track the response from your network." },
+  { icon: ClipboardCheck, title: "Approval-led access", text: "Every pharmacy and distributor is reviewed before the platform unlocks its panel." },
+]
 
 export default function HomePage() {
-  return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-
-      <main id="main-content" className="flex-1">
-        {/* Search, one bold line, and real product photography — above the fold. */}
-        <Suspense fallback={<RailSkeleton height="h-72" />}>
-          <Hero />
-        </Suspense>
-
-        <QuickActions />
-
-        <TrustStrip />
-
-        {/* Signed-in customers with delivered orders only; silent otherwise. */}
-        <Suspense fallback={null}>
-          <ReorderStrip />
-        </Suspense>
-
-        {/* Leads the browse blocks: most people arrive with a problem ("acidity",
-            "blood pressure") rather than a product or a shelf name, so the first thing
-            offered is the one they can answer without knowing any brand. */}
-        <Suspense fallback={<RailSkeleton height="h-56" />}>
-          <HealthConditions />
-        </Suspense>
-
-        {/* Then by shelf, with the page's first block of real photography. */}
-        <Suspense fallback={<RailSkeleton height="h-56" />}>
-          <CategoryTiles />
-        </Suspense>
-
-        <Suspense fallback={<RailSkeleton />}>
-          <BestValue />
-        </Suspense>
-
-        {/* Location-driven: which nearby pharmacy has it, and for how much. */}
-        <Suspense fallback={<RailSkeleton />}>
-          <AvailableNearYou />
-        </Suspense>
-
-        {/* Whichever shelves are actually stocked deeply enough to fill a rail. */}
-        <Suspense fallback={<RailSkeleton />}>
-          <ThemedRails />
-        </Suspense>
-
-        <Suspense fallback={<RailSkeleton height="h-48" />}>
-          <NearbyPharmacies />
-        </Suspense>
-
-        {/* Both silent until real data exists — see the note in each component. */}
-        <Suspense fallback={null}>
-          <HealthPackages />
-        </Suspense>
-
-        <Suspense fallback={null}>
-          <PopularBrands />
-        </Suspense>
-
-        {/* Browse by maker. Unlike PopularBrands above — which is scoped to what is on a
-            shelf today and so is silent at launch — this counts the whole active
-            catalogue, where 75 real manufacturers each have hundreds of products. */}
-        <Suspense fallback={<RailSkeleton height="h-40" />}>
-          <TopManufacturers />
-        </Suspense>
-
-        {/* Renders only once there is enough real order history to rank honestly. */}
-        <Suspense fallback={null}>
-          <Bestsellers />
-        </Suspense>
-
-        {/* Silent until the first verified doctor is onboarded. */}
-        <Suspense fallback={null}>
-          <DoctorsRail />
-        </Suspense>
-
-        {/* The safety net, placed where someone who did not find their medicine is
-            most likely to give up. */}
-        <SupportSection />
-
-        <Suspense fallback={null}>
-          <ArticlesTeaser />
-        </Suspense>
-
-        {/* ---- Partner CTAs -------------------------------------------------- */}
-        <section aria-labelledby="partner-heading" className="border-t border-border py-8">
-          <div className="page-container">
-            <h2 id="partner-heading" className="home-h3">
-              Run a pharmacy or supply medicines?
-            </h2>
-            <p className="home-meta mt-1">
-              <Link href="/pharmacy/register" className="home-link">
-                List your pharmacy
-              </Link>
-              <span className="mx-2">·</span>
-              <Link href="/distributor/register" className="home-link">
-                Register as a distributor
-              </Link>
-            </p>
-          </div>
-        </section>
-
-        {/* Four questions, not eight. Every answer ships in the initial HTML even while
-            collapsed, so the other four now live on /faq instead of costing every
-            first-time visitor ~220 words of hidden text. */}
-        <FaqSection
-          faqs={HOME_TOP_FAQS}
-          description={`Common questions about ordering medicines on ${SITE.name}.`}
-          moreHref="/faq"
-        />
-
-        <Suspense fallback={null}>
-          <SeoLinks />
-        </Suspense>
-
-        {/* Mirrors exactly the questions rendered above — Google requires FAQPage markup
-            to match what the visitor can actually see on the page. */}
-        <JsonLd data={faqJsonld(HOME_TOP_FAQS)} id="ld-home-faq" />
-      </main>
-
-      <Footer />
-    </div>
-  )
+  return <main className="min-h-screen bg-background text-foreground">
+    <header className="border-b border-border bg-background/95">
+      <div className="page-container flex h-16 items-center justify-between">
+        <Link href="/" className="flex items-center gap-3 font-semibold tracking-tight"><span className="grid size-9 place-items-center rounded-md bg-primary text-primary-foreground"><ShieldCheck className="size-5" /></span><span>LoveMedix <span className="text-muted-foreground">B2B</span></span></Link>
+        <nav className="flex items-center gap-3"><Link href="/sign-in" className="rounded-md px-4 py-2 text-sm font-medium hover:bg-muted">Sign in</Link><Link href="/register" className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Register business</Link></nav>
+      </div>
+    </header>
+    <section className="border-b border-border bg-muted/30">
+      <div className="page-container grid gap-12 py-20 lg:grid-cols-[1.1fr_.9fr] lg:items-center lg:py-28">
+        <div><div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1 text-sm text-muted-foreground"><Building2 className="size-4 text-primary" /> Built for India&apos;s medicine supply chain</div><h1 className="max-w-3xl text-balance text-5xl font-semibold tracking-tight sm:text-6xl">Wholesale medicines, with trust built in.</h1><p className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground">LoveMedix connects verified pharmacies with approved distributors so teams can buy in bulk, request hard-to-find medicines, and run their shop with one dependable workspace.</p><div className="mt-8 flex flex-wrap gap-3"><Link href="/register" className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-3 font-semibold text-primary-foreground">Get started <ArrowRight className="size-4" /></Link><Link href="/sign-in" className="rounded-md border border-border bg-background px-5 py-3 font-semibold">Sign in to your panel</Link></div></div>
+        <div className="surface p-6 shadow-sm"><div className="flex items-center justify-between border-b border-border pb-5"><div><p className="text-sm text-muted-foreground">Platform status</p><p className="mt-1 font-semibold">Verified network</p></div><span className="rounded-full bg-success/15 px-3 py-1 text-sm font-medium text-success">Approval led</span></div><div className="space-y-5 py-6"><div className="flex gap-4"><span className="grid size-10 shrink-0 place-items-center rounded-md bg-accent text-accent-foreground"><ShieldCheck className="size-5" /></span><div><p className="font-medium">Documents reviewed</p><p className="mt-1 text-sm leading-6 text-muted-foreground">Business licenses, GST and registration documents are reviewed by admin.</p></div></div><div className="flex gap-4"><span className="grid size-10 shrink-0 place-items-center rounded-md bg-accent text-accent-foreground"><PackageCheck className="size-5" /></span><div><p className="font-medium">One connected workflow</p><p className="mt-1 text-sm leading-6 text-muted-foreground">Catalog, purchasing, requests, invoices and customer ledger in one place.</p></div></div></div></div>
+      </div>
+    </section>
+    <section className="page-container py-16"><div className="max-w-2xl"><p className="text-sm font-semibold uppercase tracking-[0.16em] text-primary">A better operating system</p><h2 className="mt-3 text-3xl font-semibold tracking-tight">Everything your medicine business needs to move with confidence.</h2></div><div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">{capabilities.map(({ icon: Icon, title, text }) => <article key={title} className="surface p-5"><Icon className="size-6 text-primary" /><h3 className="mt-6 font-semibold">{title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{text}</p></article>)}</div></section>
+    <section className="border-t border-border bg-primary py-14 text-primary-foreground"><div className="page-container flex flex-col justify-between gap-6 md:flex-row md:items-center"><div><h2 className="text-2xl font-semibold">Ready to join the verified network?</h2><p className="mt-2 text-primary-foreground/75">Register your pharmacy or distribution business for admin approval.</p></div><Link href="/register" className="inline-flex items-center gap-2 self-start rounded-md bg-primary-foreground px-5 py-3 font-semibold text-primary">Register your business <ArrowRight className="size-4" /></Link></div></section>
+  </main>
 }

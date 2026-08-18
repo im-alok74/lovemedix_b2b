@@ -1,0 +1,5 @@
+import Link from "next/link"
+import { notFound } from "next/navigation"
+import { AuthForm } from "@/components/auth-form"
+
+export default async function BusinessRegistration({ params }: { params: Promise<{ type: string }> }) { const { type } = await params; if (type !== "pharmacy" && type !== "distributor") notFound(); const label = type === "pharmacy" ? "pharmacy" : "distributor"; return <main className="grid min-h-screen place-items-center bg-muted/30 p-6"><div className="w-full max-w-md"><Link href="/" className="mb-8 block text-center text-xl font-semibold">LoveMedix <span className="text-muted-foreground">B2B</span></Link><div className="surface p-6 sm:p-8"><p className="text-sm font-semibold uppercase tracking-[0.16em] text-primary">{label} onboarding</p><h1 className="mt-3 text-2xl font-semibold">Register your {label}</h1><p className="mt-2 text-sm leading-6 text-muted-foreground">Create an account first. We&apos;ll collect your business documents and admin will review your application.</p><AuthForm mode="sign-up" role={type} /></div></div></main> }

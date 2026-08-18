@@ -1,0 +1,4 @@
+import Link from "next/link"
+import { ClipboardCheck } from "lucide-react"
+
+export default function PendingApprovalPage() { return <main className="grid min-h-screen place-items-center bg-muted/30 p-6"><div className="surface w-full max-w-lg p-8 text-center"><span className="mx-auto grid size-14 place-items-center rounded-full bg-warning/15 text-warning-foreground"><ClipboardCheck className="size-7" /></span><h1 className="mt-6 text-2xl font-semibold">Application submitted</h1><p className="mt-3 text-sm leading-6 text-muted-foreground">Your account is waiting for admin verification. Once approved, your role-specific panel and catalog access will be unlocked.</p><Link href="/sign-in" className="mt-7 inline-flex rounded-md bg-primary px-5 py-3 font-semibold text-primary-foreground">Return to sign in</Link></div></main> }
