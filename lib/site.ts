@@ -2,21 +2,20 @@
  * Single source of truth for brand identity, contact details and SEO defaults.
  *
  * Everything that renders the company name — page titles, invoices, emails, structured
- * data — reads from here. Previously "Davaa.in" and "Davaa.in" were hardcoded in
- * different files and the storefront disagreed with the invoices.
+ * data — reads from here so every B2B surface stays consistent.
  */
 
 export const SITE = {
-  name: "Davaa.in",
-  legalName: "Davaa Pharma Private Limited",
-  tagline: "Medicines in Minutes",
+  name: "LoveMedix",
+  legalName: "LoveMedix Healthcare Private Limited",
+  tagline: "Verified wholesale medicine supply",
   description:
-    "Order prescription and OTC medicines online from verified pharmacies. Genuine medicines, transparent pricing and fast doorstep delivery across India.",
+    "LoveMedix is a verified B2B medicine procurement platform connecting approved pharmacies and distributors across India.",
 
-  url: (process.env.NEXT_PUBLIC_SITE_URL || "https://davaa.in").replace(/\/$/, ""),
+  url: (process.env.NEXT_PUBLIC_SITE_URL || "https://lovemedix.in").replace(/\/$/, ""),
 
   contact: {
-    email: "support@davaa.in",
+    email: "support@lovemedix.in",
     phone: "+91 9508178521",
     address: {
       street: "Silao",
@@ -28,16 +27,16 @@ export const SITE = {
   },
 
   social: {
-    facebook: "https://facebook.com/davaain",
-    twitter: "https://twitter.com/davaain",
-    instagram: "https://instagram.com/davaain",
+    facebook: "https://facebook.com/lovemedix",
+    twitter: "https://twitter.com/lovemedix",
+    instagram: "https://instagram.com/lovemedix",
   },
 
-  /** Delivery promise shown across the storefront. Keep in sync with reality. */
+  /** Platform support details for approved business accounts. */
   promise: {
-    deliveryWindow: "2–24 hours",
-    freeDeliveryAbove: 500,
-    returnWindow: "7 days",
+    deliveryWindow: "Same-day dispatch for available stock",
+    freeDeliveryAbove: 0,
+    returnWindow: "As agreed between business partners",
   },
 
   /**
@@ -56,7 +55,7 @@ export const SITE = {
   },
 } as const
 
-/** Prefilled WhatsApp deep link. `text` becomes the first message the customer sends. */
+  /** Prefilled WhatsApp deep link. `text` becomes the first message a business user sends. */
 export function whatsappUrl(text?: string): string {
   const base = `https://wa.me/${SITE.support.whatsappNumber}`
   return text ? `${base}?text=${encodeURIComponent(text)}` : base
@@ -74,7 +73,7 @@ export function absoluteUrl(path = "/"): string {
 
 /**
  * Page title helper. Home passes nothing and gets the brand line; every other page
- * gets "Page · Davaa.in", which keeps titles under the ~60 chars Google renders.
+ * gets a concise branded title.
  */
 export function pageTitle(title?: string): string {
   return title ? `${title} · ${SITE.name}` : `${SITE.name} — ${SITE.tagline}`
