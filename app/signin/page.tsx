@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { SignInForm } from '@/components/auth/signin-form'
 
 export const metadata = {
-  title: 'Sign In | Davaa B2B',
+  title: 'Sign In | Lovemedix',
 }
 
 export default async function SignInPage() {

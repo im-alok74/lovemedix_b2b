@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { CheckCircle2, ShieldCheck, Store } from 'lucide-react'
 
 export const metadata = {
-  title: 'Pharmacy Registration | Davaa B2B',
+  title: 'Pharmacy Registration | Lovemedix',
 }
 
 export default function PharmacyRegisterPage() {
@@ -31,7 +31,7 @@ export default function PharmacyRegisterPage() {
             <Card className="overflow-hidden border-0 bg-gradient-to-br from-primary/10 via-background to-background shadow-sm">
               <CardContent className="p-6 lg:p-8">
                 <div className="rounded-2xl border border-primary/20 bg-background/80 p-5">
-                  <h2 className="text-xl font-semibold text-foreground">Why pharmacies join Davaa B2B</h2>
+                  <h2 className="text-xl font-semibold text-foreground">Why pharmacies join Lovemedix</h2>
                   <div className="mt-5 space-y-4 text-sm text-muted-foreground">
                     <div className="flex items-start gap-3">
                       <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-600" />

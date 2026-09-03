@@ -44,26 +44,18 @@ export default function NotFound() {
             We couldn&apos;t find that page
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            The link may be broken, or the medicine may no longer be listed. Try searching for it
-            instead — the search box at the top covers the whole catalogue.
+            The link may be broken or the page may have moved. Head back to your dashboard or the
+            home page.
           </p>
 
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Button asChild>
-              <Link href="/medicines">Browse medicines</Link>
-            </Button>
-            <Button variant="outline" asChild>
               <Link href="/">Go home</Link>
             </Button>
+            <Button variant="outline" asChild>
+              <Link href="/signin">Sign in</Link>
+            </Button>
           </div>
-
-          <p className="mt-8 text-xs text-muted-foreground">
-            Looking for something specific?{" "}
-            <Link href="/upload-prescription" className="text-primary hover:underline">
-              Upload your prescription
-            </Link>{" "}
-            and a pharmacist will find it for you.
-          </p>
         </div>
       </main>
 

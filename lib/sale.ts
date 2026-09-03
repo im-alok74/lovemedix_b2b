@@ -34,6 +34,8 @@ interface CreateSaleInput {
 }
 
 /** Create a customer bill and decrement pharmacy inventory in one transaction. */
+const TX_OPTS = { maxWait: 10_000, timeout: 20_000 } as const
+
 export async function createSale(input: CreateSaleInput) {
   return prisma.$transaction(async (tx) => {
     // Resolve / create the customer.
@@ -108,5 +110,5 @@ export async function createSale(input: CreateSaleInput) {
       include: { items: true, customer: true },
     })
     return sale
-  })
+  }, TX_OPTS)
 }

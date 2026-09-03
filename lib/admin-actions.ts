@@ -1,5 +1,7 @@
 import prisma from '@/lib/prisma'
 
+const TX_OPTS = { maxWait: 10_000, timeout: 20_000 } as const
+
 type ProfileKind = 'pharmacy' | 'distributor'
 export type VerificationAction = 'approve' | 'reject' | 'suspend' | 'reinstate'
 
@@ -66,7 +68,7 @@ export async function setProfileVerification(
         link: kind === 'pharmacy' ? '/pharmacy/dashboard' : '/distributor/dashboard',
       },
     })
-  })
+  }, TX_OPTS)
 }
 
 export async function setDocumentVerification(
@@ -95,5 +97,5 @@ export async function setDocumentVerification(
         metadata: reason ? { reason } : undefined,
       },
     })
-  })
+  }, TX_OPTS)
 }

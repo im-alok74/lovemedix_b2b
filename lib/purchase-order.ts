@@ -9,6 +9,10 @@ export class OrderError extends Error {
   }
 }
 
+// Neon round-trips are slow enough that multi-step order transactions blow the
+// default 5s interactive-transaction budget. Give them room.
+const TX_OPTS = { maxWait: 10_000, timeout: 20_000 } as const
+
 interface CreateInput {
   pharmacyId: number
   distributorId: number
@@ -81,12 +85,14 @@ export async function createPurchaseOrder(input: CreateInput) {
       throw new OrderError(`Order total is below this distributor's minimum of ₹${distributor.minOrderValue}`, 409)
     }
 
-    for (const r of itemRows) {
-      await tx.distributorListing.update({
-        where: { id: r.distributorListingId },
-        data: { reservedQuantity: { increment: r.quantity } },
-      })
-    }
+    await Promise.all(
+      itemRows.map((r) =>
+        tx.distributorListing.update({
+          where: { id: r.distributorListingId },
+          data: { reservedQuantity: { increment: r.quantity } },
+        }),
+      ),
+    )
 
     const orderNumber = await nextPurchaseOrderNumber(tx)
     const order = await tx.purchaseOrder.create({
@@ -130,7 +136,7 @@ export async function createPurchaseOrder(input: CreateInput) {
     })
 
     return order
-  })
+  }, TX_OPTS)
 }
 
 type Transition = 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'REJECTED'
@@ -178,23 +184,19 @@ export async function transitionPurchaseOrder(
     const releasesStock = to === 'CANCELLED' || to === 'REJECTED'
     const consumesStock = to === 'SHIPPED'
 
-    for (const item of order.items) {
-      if (!item.distributorListingId) continue
-      if (releasesStock) {
-        await tx.distributorListing.update({
-          where: { id: item.distributorListingId },
-          data: { reservedQuantity: { decrement: item.quantity } },
-        })
-      }
-      if (consumesStock) {
-        await tx.distributorListing.update({
-          where: { id: item.distributorListingId },
-          data: {
-            quantity: { decrement: item.quantity },
-            reservedQuantity: { decrement: item.quantity },
-          },
-        })
-      }
+    if (releasesStock || consumesStock) {
+      await Promise.all(
+        order.items
+          .filter((item) => item.distributorListingId)
+          .map((item) =>
+            tx.distributorListing.update({
+              where: { id: item.distributorListingId! },
+              data: releasesStock
+                ? { reservedQuantity: { decrement: item.quantity } }
+                : { quantity: { decrement: item.quantity }, reservedQuantity: { decrement: item.quantity } },
+            }),
+          ),
+      )
     }
 
     const timestamps: Record<string, Partial<Record<'confirmedAt' | 'shippedAt' | 'deliveredAt' | 'cancelledAt', Date>>> = {
@@ -246,5 +248,5 @@ export async function transitionPurchaseOrder(
     })
 
     return updated
-  })
+  }, TX_OPTS)
 }

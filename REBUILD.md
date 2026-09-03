@@ -34,18 +34,32 @@ alongside, plus large hardcoded mock-data libs and a 1mg scraper.
 - [x] **Phase 2 — Remove consumer surface.** Deleted all consumer pages/routes/
   components, mock-data libs, scraper & debug scripts. Rebranded to Lovemedix.
   Rewrote the public shell (layout, header, footer, sitemap, manifest) as B2B.
-- [ ] **Phase 3 — Auth & middleware.** Consolidate `lib/auth*.ts` +
-  `lib/seller-auth.ts` into one Prisma-based module. Route-group middleware
-  enforcing role + approval gating. Remove `lib/db.ts` (raw SQL).
-- [ ] **Phase 4 — Admin panel.** Approvals, document verification, medicines,
-  distributors, pharmacies, purchase orders, medicine requests, settings, users.
-- [ ] **Phase 5 — Distributor.** Registration + docs, listing management
-  (price/stock/batch/expiry), bulk upload, incoming purchase orders, requests.
-- [ ] **Phase 6 — Pharmacy.** Registration + docs, catalog browse, bulk cart →
-  purchase order, medicine requests, inventory, customers, retail sales/billing.
-- [ ] **Phase 7 — Landing & polish.** Landing page, empty/loading/error states,
-  a11y, rate limiting, audit logging, notifications, invoice PDF, seed data,
-  end-to-end verification.
+- [x] **Phase 3 — Auth & middleware.** One Prisma auth module (`lib/auth.ts`):
+  role + approval guards, request-cached context. Edge-safe `proxy.ts` cookie
+  gate; deep role/approval checks in route-group layouts. Deleted `lib/db.ts`,
+  `lib/seller-auth.ts`, `lib/auth-edge.ts`.
+- [x] **Phase 4 — Admin panel.** Overview, pharmacy/distributor approval +
+  document verification, medicine catalog CRUD, categories, purchase orders,
+  medicine requests, users, platform settings. Audit log + notifications.
+- [x] **Phase 5 — Distributor.** Register + document upload, listing CRUD + bulk
+  spreadsheet upload, incoming purchase-order state machine (auto-invoice on
+  confirm, stock reservation/consumption), medicine-request resolution, settings.
+- [x] **Phase 6 — Pharmacy.** Register + documents, catalog browse, per-browser
+  cart → one purchase order per distributor, PO tracking + pay, medicine
+  requests, inventory, customers, retail billing (printable bill, stock decrement).
+- [x] **Phase 7 — Polish & verification.** B2B landing shell, register forms
+  matched to schema, `proxy.ts` convention, transaction timeouts tuned for Neon,
+  demo seed (`prisma/seed-demo.mjs`). Full `next build` green; end-to-end flow
+  verified against the live dev server (place PO → confirm → invoice → ship →
+  pay; add inventory → customer bill).
+
+### Still open / follow-ups
+
+- Direct in-app document upload (Cloudinary keys unset — currently paste-a-URL).
+- Invoice/bill PDF export (print-to-PDF works from the browser today).
+- Email/SMS notifications (in-app `Notification` rows only).
+- The `origin/main` divergence (LoveMedix rebrand + portal-shell) is still
+  unmerged; this branch was built on the local working tree per the audit.
 
 ## Local setup
 

@@ -24,7 +24,7 @@ function matches(pathname: string, prefix: string) {
   return pathname === prefix || pathname.startsWith(`${prefix}/`)
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl
 
   if (PUBLIC_EXCEPTIONS.some((p) => matches(pathname, p))) return NextResponse.next()

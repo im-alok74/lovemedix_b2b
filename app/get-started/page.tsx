@@ -12,7 +12,7 @@ import { SignInForm } from '@/components/auth/signin-form'
 import { Store, Building2 } from 'lucide-react'
 
 export const metadata = {
-  title: 'Get Started | Davaa B2B',
+  title: 'Get Started | Lovemedix',
 }
 
 export default async function GetStartedPage() {

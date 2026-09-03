@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { CheckCircle2, ShieldCheck, Building2 } from 'lucide-react'
 
 export const metadata = {
-  title: 'Distributor Registration | Davaa B2B',
+  title: 'Distributor Registration | Lovemedix',
 }
 
 export default function DistributorRegisterPage() {
