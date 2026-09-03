@@ -1,16 +1,13 @@
-"use client"
+'use client'
 
-import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { useToast } from "@/hooks/use-toast"
-import { Search, ShoppingCart, AlertCircle, Loader2 } from "lucide-react"
-
-type NumericLike = number | string
+import { useEffect, useState } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+import { useToast } from '@/hooks/use-toast'
+import { Search, ShoppingCart, AlertCircle, Loader2 } from 'lucide-react'
 
 interface DistributorItem {
   id: number
@@ -20,20 +17,13 @@ interface DistributorItem {
   name: string
   generic_name: string
   manufacturer: string
-  category: string
-  form: string
-  strength: string
-  pack_size: string
   batch_number: string
   expiry_date: string
-  mrp: NumericLike
-  unit_price: NumericLike
-  quantity: NumericLike
-  reserved_quantity: NumericLike
-  available_quantity: NumericLike
-  stock_status: "in_stock" | "out_of_stock"
+  mrp: number
+  unit_price: number
+  available_quantity: number
   images?: string[]
-  image_url?: string
+  photo_url?: string
 }
 
 interface CartItem {
@@ -45,95 +35,83 @@ interface CartItem {
 export function PharmacyProcurementMarketplace() {
   const [items, setItems] = useState<DistributorItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [query, setQuery] = useState("")
-  const [category, setCategory] = useState("")
-  const [showOutOfStock, setShowOutOfStock] = useState(false)
+  const [query, setQuery] = useState('')
+  const [category, setCategory] = useState('')
   const [cart, setCart] = useState<CartItem[]>([])
   const [requestingItem, setRequestingItem] = useState<number | null>(null)
+  const [categories, setCategories] = useState<any[]>([])
   const { toast } = useToast()
 
-  const fetchInventory = async (includeOutOfStock = false) => {
+  const fetchInventory = async () => {
     setIsLoading(true)
     try {
       const params = new URLSearchParams()
-      if (query) params.set("q", query)
-      if (category) params.set("category", category)
-      if (includeOutOfStock) params.set("includeOutOfStock", "true")
+      if (query) params.set('search', query)
+      if (category) params.set('category', category)
+      params.set('limit', '50')
 
-      const res = await fetch(`/api/procurement/inventory?${params.toString()}`, {
-        credentials: "include",
-        cache: "no-store",
-      })
+      const res = await fetch(`/api/pharmacy/medicines?${params.toString()}`, { cache: 'no-store' })
       const data = await res.json()
       if (res.ok) {
-        const normalized: DistributorItem[] = (data.items || []).map((it: any) => ({
-          ...it,
-          mrp: Number(it.mrp || 0),
-          unit_price: Number(it.unit_price || 0),
-          quantity: Number(it.quantity || 0),
-          reserved_quantity: Number(it.reserved_quantity || 0),
-          available_quantity: Number(it.available_quantity || 0),
-        }))
+        const normalized: DistributorItem[] = (data.items || []).flatMap((m: any) =>
+          (m.distributor_listings || []).map((dl: any) => ({
+            id: dl.distributor_medicine_id,
+            distributor_id: dl.distributor_id,
+            distributor_name: dl.company_name,
+            medicine_id: m.id,
+            name: m.name,
+            generic_name: m.generic_name,
+            manufacturer: m.manufacturer,
+            batch_number: dl.batch_number || '',
+            expiry_date: dl.expiry_date,
+            mrp: Number(m.mrp || 0),
+            unit_price: Number(dl.unit_price || 0),
+            available_quantity: Number(dl.available_quantity || 0),
+            images: m.images,
+            photo_url: m.photo_url,
+          }))
+        )
         setItems(normalized)
       } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to load distributor inventory",
-          variant: "destructive",
-        })
+        toast({ title: 'Error', description: data.error || 'Failed to load catalog', variant: 'destructive' })
       }
-    } catch (error) {
-      console.error("Error fetching procurement inventory:", error)
-      toast({
-        title: "Error",
-        description: "Something went wrong while loading inventory",
-        variant: "destructive",
-      })
+    } catch {
+      toast({ title: 'Error', description: 'Something went wrong', variant: 'destructive' })
     } finally {
       setIsLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchInventory(showOutOfStock)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showOutOfStock])
+    fetchInventory()
+    fetch('/api/categories', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d) => setCategories(d.categories || []))
+      .catch(() => {})
+  }, [])
 
   const handleRequestOutOfStock = async (item: DistributorItem) => {
     setRequestingItem(item.id)
     try {
-      const res = await fetch("/api/procurement/out-of-stock-requests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/pharmacy/out-of-stock-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          distributorMedicineId: item.id,
           distributorId: item.distributor_id,
           medicineId: item.medicine_id,
+          distributorMedicineId: item.id,
           requestedQuantity: 1,
-          notes: "",
+          notes: '',
         }),
       })
-
       const data = await res.json()
       if (res.ok) {
-        toast({
-          title: "Success",
-          description: "Request sent to distributor. They will notify you when stock arrives.",
-        })
+        toast({ title: 'Success', description: 'Request sent to distributor.' })
       } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to create request",
-          variant: "destructive",
-        })
+        toast({ title: 'Error', description: data.error || 'Failed to create request', variant: 'destructive' })
       }
-    } catch (error) {
-      console.error("Error creating request:", error)
-      toast({
-        title: "Error",
-        description: "Something went wrong",
-        variant: "destructive",
-      })
+    } catch {
+      toast({ title: 'Error', description: 'Something went wrong', variant: 'destructive' })
     } finally {
       setRequestingItem(null)
     }
@@ -141,47 +119,29 @@ export function PharmacyProcurementMarketplace() {
 
   const addToCart = (item: DistributorItem) => {
     setCart((prev) => {
-      // Enforce single-distributor cart per request
-      if (prev.length > 0) {
-        const currentDistributorId = prev[0].item.distributor_id
-        if (currentDistributorId !== item.distributor_id) {
-          toast({
-            title: "One distributor per request",
-            description:
-              "Please submit the current cart first, or clear it to add items from another distributor.",
-            variant: "destructive",
-          })
-          return prev
-        }
+      if (prev.length > 0 && prev[0].item.distributor_id !== item.distributor_id) {
+        toast({
+          title: 'One distributor per request',
+          description: 'Submit the current cart first, or clear it to add from another distributor.',
+          variant: 'destructive',
+        })
+        return prev
       }
-
       const existing = prev.find((c) => c.distributorMedicineId === item.id)
       if (existing) {
         const nextQty = existing.quantity + 1
-        if (item.stock_status === "in_stock" && nextQty > Number(item.available_quantity)) {
-          toast({
-            title: "Insufficient stock",
-            description: "Quantity exceeds available stock from this distributor.",
-            variant: "destructive",
-          })
+        if (nextQty > item.available_quantity) {
+          toast({ title: 'Insufficient stock', variant: 'destructive' })
           return prev
         }
-        return prev.map((c) =>
-          c.distributorMedicineId === item.id ? { ...c, quantity: nextQty } : c
-        )
+        return prev.map((c) => c.distributorMedicineId === item.id ? { ...c, quantity: nextQty } : c)
       }
       return [...prev, { distributorMedicineId: item.id, quantity: 1, item }]
     })
   }
 
   const updateCartQuantity = (id: number, quantity: number) => {
-    setCart((prev) =>
-      prev
-        .map((c) =>
-          c.distributorMedicineId === id ? { ...c, quantity: Math.max(1, quantity) } : c
-        )
-        .filter((c) => c.quantity > 0)
-    )
+    setCart((prev) => prev.map((c) => c.distributorMedicineId === id ? { ...c, quantity: Math.max(1, quantity) } : c).filter((c) => c.quantity > 0))
   }
 
   const removeFromCart = (id: number) => {
@@ -190,94 +150,66 @@ export function PharmacyProcurementMarketplace() {
 
   const submitPurchaseRequest = async () => {
     if (cart.length === 0) {
-      toast({
-        title: "Cart is empty",
-        description: "Add at least one in-stock item before creating a purchase request.",
-        variant: "destructive",
-      })
+      toast({ title: 'Cart is empty', description: 'Add at least one item before creating a purchase request.', variant: 'destructive' })
       return
     }
-
     try {
-      const res = await fetch("/api/procurement/purchase-requests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/pharmacy/purchase-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items: cart.map((c) => ({
-            distributorMedicineId: c.distributorMedicineId,
-            quantity: c.quantity,
-          })),
+          items: cart.map((c) => ({ distributorMedicineId: c.distributorMedicineId, quantity: c.quantity })),
         }),
       })
       const data = await res.json()
       if (res.ok) {
-        toast({
-          title: "Purchase request submitted",
-          description: "Your in-stock items were sent for procurement.",
-        })
+        toast({ title: 'Purchase request submitted', description: 'Your in-stock items were sent for procurement.' })
         setCart([])
-        fetchInventory(showOutOfStock)
+        fetchInventory()
       } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to create purchase request",
-          variant: "destructive",
-        })
+        toast({ title: 'Error', description: data.error || 'Failed to create purchase request', variant: 'destructive' })
       }
-    } catch (error) {
-      console.error("Error creating purchase request:", error)
-      toast({
-        title: "Error",
-        description: "Something went wrong",
-        variant: "destructive",
-      })
+    } catch {
+      toast({ title: 'Error', description: 'Something went wrong', variant: 'destructive' })
     }
   }
 
-  const cartTotal = cart.reduce(
-    (sum, c) => sum + c.quantity * Number(c.item.unit_price || 0),
-    0
-  )
+  const cartTotal = cart.reduce((sum, c) => sum + c.quantity * Number(c.item.unit_price || 0), 0)
 
   return (
     <div className="grid gap-6 md:grid-cols-[2fr,1fr]">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Distributor Marketplace</CardTitle>
-            <Button
-              size="sm"
-              variant={showOutOfStock ? "default" : "outline"}
-              onClick={() => setShowOutOfStock(!showOutOfStock)}
-            >
-              <AlertCircle className="h-4 w-4 mr-2" />
-              {showOutOfStock ? "Hide Out of Stock" : "Show Out of Stock"}
-            </Button>
-          </div>
+          <CardTitle>Distributor Marketplace</CardTitle>
           <div className="flex flex-wrap items-center gap-4 mt-4">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search medicines or manufacturers..."
+                placeholder="Search medicines..."
                 className="pl-8"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    fetchInventory(showOutOfStock)
-                  }
-                }}
+                onKeyDown={(e) => { if (e.key === 'Enter') fetchInventory() }}
               />
             </div>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="border rounded-md px-3 py-2 text-sm"
+            >
+              <option value="">All Categories</option>
+              {categories.map((c: any) => (
+                <option key={c.id} value={String(c.id)}>{c.name}</option>
+              ))}
+            </select>
+            <Button variant="outline" onClick={fetchInventory}>Search</Button>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-6 text-center text-muted-foreground">Loading inventory...</div>
           ) : items.length === 0 ? (
-            <div className="p-6 text-center text-muted-foreground">
-              No distributor stock available right now.
-            </div>
+            <div className="p-6 text-center text-muted-foreground">No distributor stock available.</div>
           ) : (
             <Table>
               <TableHeader>
@@ -288,25 +220,23 @@ export function PharmacyProcurementMarketplace() {
                   <TableHead>Batch / Expiry</TableHead>
                   <TableHead>Available</TableHead>
                   <TableHead>MRP</TableHead>
-                  <TableHead>Wholesale Price</TableHead>
+                  <TableHead>Wholesale</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {items.map((item) => {
-                  const isOutOfStock = item.stock_status === "out_of_stock"
+                  const isOutOfStock = item.available_quantity <= 0
                   return (
-                    <TableRow key={item.id} className={isOutOfStock ? "opacity-75" : ""}>
+                    <TableRow key={item.id} className={isOutOfStock ? 'opacity-75' : ''}>
                       <TableCell>
                         <div className="w-12 h-12 rounded-md border bg-muted flex items-center justify-center overflow-hidden relative">
-                          {item.images?.[0] || item.image_url ? (
+                          {item.images?.[0] || item.photo_url ? (
                             <img
-                              src={item.images?.[0] || item.image_url}
+                              src={item.images?.[0] || item.photo_url}
                               alt={item.name}
                               className="w-full h-full object-cover"
-                              onError={(e) => {
-                                (e.currentTarget as HTMLImageElement).style.display = "none"
-                              }}
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
                             />
                           ) : (
                             <span className="text-xs text-muted-foreground">No image</span>
@@ -321,29 +251,20 @@ export function PharmacyProcurementMarketplace() {
                       <TableCell>
                         <div>
                           <p className="font-medium text-sm">{item.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {item.generic_name} • {item.strength} {item.form}
-                          </p>
-                          {isOutOfStock && (
-                            <Badge variant="destructive" className="text-xs mt-1">
-                              Out of Stock
-                            </Badge>
-                          )}
+                          <p className="text-xs text-muted-foreground">{item.generic_name} &middot; {item.manufacturer}</p>
                         </div>
                       </TableCell>
                       <TableCell>{item.distributor_name}</TableCell>
                       <TableCell className="text-xs">
-                        <div>{item.batch_number || "-"}</div>
-                        <div className="text-muted-foreground">
-                          Exp: {new Date(item.expiry_date).toLocaleDateString("en-IN")}
-                        </div>
+                        <div>{item.batch_number || '-'}</div>
+                        <div className="text-muted-foreground">Exp: {new Date(item.expiry_date).toLocaleDateString('en-IN')}</div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={Number(item.available_quantity) > 0 ? "outline" : "secondary"}>
-                          {Number(item.available_quantity)}
+                        <Badge variant={item.available_quantity > 0 ? 'outline' : 'secondary'}>
+                          {item.available_quantity}
                         </Badge>
                       </TableCell>
-                      <TableCell>₹{Number(item.mrp || 0).toFixed(2)}</TableCell>
+                      <TableCell>₹{Number(item.mrp).toFixed(2)}</TableCell>
                       <TableCell>₹{Number(item.unit_price).toFixed(2)}</TableCell>
                       <TableCell className="text-right">
                         {isOutOfStock ? (
@@ -365,7 +286,7 @@ export function PharmacyProcurementMarketplace() {
                             size="sm"
                             variant="outline"
                             onClick={() => addToCart(item)}
-                            disabled={Number(item.available_quantity) <= 0}
+                            disabled={item.available_quantity <= 0}
                           >
                             <ShoppingCart className="h-4 w-4 mr-1" />
                             Add
@@ -387,9 +308,7 @@ export function PharmacyProcurementMarketplace() {
         </CardHeader>
         <CardContent className="space-y-4">
           {cart.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Add items from the marketplace to build a purchase request.
-            </p>
+            <p className="text-sm text-muted-foreground">Add items from the marketplace to build an order.</p>
           ) : (
             <>
               <div className="space-y-3 max-h-[320px] overflow-y-auto pr-1">
@@ -400,27 +319,18 @@ export function PharmacyProcurementMarketplace() {
                   >
                     <div className="flex-1 mr-2">
                       <div className="font-medium">{entry.item.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {entry.item.distributor_name}
-                      </div>
+                      <div className="text-xs text-muted-foreground">{entry.item.distributor_name}</div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Input
                         type="number"
                         className="w-16 h-8 text-xs"
                         min={1}
-                        max={Number(entry.item.available_quantity)}
+                        max={entry.item.available_quantity}
                         value={entry.quantity}
-                        onChange={(e) =>
-                          updateCartQuantity(
-                            entry.distributorMedicineId,
-                            Number(e.target.value || 1),
-                          )
-                        }
+                        onChange={(e) => updateCartQuantity(entry.distributorMedicineId, Number(e.target.value || 1))}
                       />
-                      <div className="text-xs">
-                        ₹{(entry.quantity * Number(entry.item.unit_price)).toFixed(2)}
-                      </div>
+                      <div className="text-xs">₹{(entry.quantity * Number(entry.item.unit_price)).toFixed(2)}</div>
                       <Button
                         size="icon"
                         variant="ghost"
@@ -437,9 +347,7 @@ export function PharmacyProcurementMarketplace() {
                 <div className="text-sm text-muted-foreground">
                   Items: <span className="font-semibold text-foreground">{cart.length}</span>
                 </div>
-                <div className="text-sm font-semibold text-foreground">
-                  Total: ₹{cartTotal.toFixed(2)}
-                </div>
+                <div className="text-sm font-semibold text-foreground">Total: ₹{cartTotal.toFixed(2)}</div>
               </div>
               <Button className="w-full" onClick={submitPurchaseRequest}>
                 Submit Purchase Request
@@ -451,4 +359,3 @@ export function PharmacyProcurementMarketplace() {
     </div>
   )
 }
-

@@ -1,321 +1,193 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useToast } from "@/hooks/use-toast"
-import { useRouter } from "next/navigation"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Plus } from "lucide-react"
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { useToast } from '@/hooks/use-toast'
+import { ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
 
-export default function AddMedicineForm({ onMedicineAdded }: { onMedicineAdded?: () => void }) {
-  const [open, setOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const { toast } = useToast()
+export function AddMedicineForm() {
   const router = useRouter()
+  const { toast } = useToast()
+  const [medicines, setMedicines] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
 
-  const [formData, setFormData] = useState({
-    medicineName: "",
-    genericName: "",
-    manufacturer: "",
-    hsnCode: "",
-    batchNumber: "",
-    mfgDate: "",
-    expiryDate: "",
-    mrp: "",
-    quantity: "",
-    unitPrice: "",
-    notes: "",
-    imageUrl: ""
+  const [form, setForm] = useState({
+    medicineId: '',
+    batchNumber: '',
+    mfgDate: '',
+    expiryDate: '',
+    mrp: '',
+    quantity: '',
+    sellingPrice: '',
+    discountPercent: '0',
   })
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
-  }
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const result = reader.result as string
-        setImagePreview(result)
-        setFormData(prev => ({
-          ...prev,
-          imageUrl: result
-        }))
-      }
-      reader.readAsDataURL(file)
-    }
-  }
+  useEffect(() => {
+    fetch('/api/pharmacy/medicines?limit=50', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d) => setMedicines(d.items || []))
+      .catch(() => {})
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
-
+    setLoading(true)
     try {
-      const response = await fetch("/api/pharmacy/medicines", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
+      const res = await fetch('/api/pharmacy/inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          medicineId: Number(form.medicineId),
+          batchNumber: form.batchNumber || null,
+          mfgDate: form.mfgDate || null,
+          expiryDate: form.expiryDate,
+          mrp: Number(form.mrp),
+          quantity: Number(form.quantity),
+          sellingPrice: Number(form.sellingPrice),
+          discountPercent: Number(form.discountPercent || 0),
+        }),
       })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Medicine added successfully"
-        })
-        setFormData({
-          medicineName: "",
-          genericName: "",
-          manufacturer: "",
-          hsnCode: "",
-          batchNumber: "",
-          mfgDate: "",
-          expiryDate: "",
-          mrp: "",
-          quantity: "",
-          unitPrice: "",
-          notes: "",
-          imageUrl: ""
-        })
-        setImagePreview(null)
-        setOpen(false)
-        router.refresh()
-        onMedicineAdded?.()
+      const data = await res.json()
+      if (res.ok) {
+        toast({ title: 'Success', description: 'Medicine added to inventory' })
+        router.push('/pharmacy/inventory')
       } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to add medicine",
-          variant: "destructive"
-        })
+        toast({ title: 'Error', description: data.error || 'Failed to add medicine', variant: 'destructive' })
       }
-    } catch (error) {
-      console.error("Error adding medicine:", error)
-      toast({
-        title: "Error",
-        description: "Something went wrong",
-        variant: "destructive"
-      })
+    } catch {
+      toast({ title: 'Error', description: 'Something went wrong', variant: 'destructive' })
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Add Medicine
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Add New Medicine</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Medicine Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Medicine Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Medicine Name *</Label>
-                  <Input
-                    name="medicineName"
-                    value={formData.medicineName}
-                    onChange={handleInputChange}
-                    placeholder="e.g., Aspirin"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label>Generic Name</Label>
-                  <Input
-                    name="genericName"
-                    value={formData.genericName}
-                    onChange={handleInputChange}
-                    placeholder="e.g., Acetylsalicylic acid"
-                  />
-                </div>
-                <div>
-                  <Label>Manufacturer</Label>
-                  <Input
-                    name="manufacturer"
-                    value={formData.manufacturer}
-                    onChange={handleInputChange}
-                    placeholder="e.g., Bayer"
-                  />
-                </div>
-                <div>
-                  <Label>HSN Code</Label>
-                  <Input
-                    name="hsnCode"
-                    value={formData.hsnCode}
-                    onChange={handleInputChange}
-                    placeholder="Or type N/A"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+    <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <Button asChild variant="ghost" className="mb-4">
+        <Link href="/pharmacy/inventory"><ArrowLeft className="h-4 w-4 mr-2" />Back to Inventory</Link>
+      </Button>
+      <h1 className="text-3xl font-bold text-foreground mb-6">Add Medicine to Inventory</h1>
 
-          {/* Batch & Date Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Batch & Date Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Batch Number</Label>
-                  <Input
-                    name="batchNumber"
-                    value={formData.batchNumber}
-                    onChange={handleInputChange}
-                    placeholder="Or type N/A"
-                  />
-                </div>
-                <div>
-                  <Label>MFG Date</Label>
-                  <Input
-                    name="mfgDate"
-                    type="date"
-                    value={formData.mfgDate}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div>
-                  <Label>EXP Date *</Label>
-                  <Input
-                    name="expiryDate"
-                    type="date"
-                    value={formData.expiryDate}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border border-border bg-card p-6">
+        <div className="space-y-2">
+          <Label htmlFor="medicineId">Medicine</Label>
+          <Select
+            value={form.medicineId}
+            onValueChange={(v) => setForm((f) => ({ ...f, medicineId: v }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select medicine" />
+            </SelectTrigger>
+            <SelectContent>
+              {medicines.map((m: any) => (
+                <SelectItem key={m.id} value={String(m.id)}>
+                  {m.name} - {m.generic_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-          {/* Pricing & Quantity */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Pricing & Quantity</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>MRP *</Label>
-                  <Input
-                    name="mrp"
-                    type="number"
-                    step="0.01"
-                    value={formData.mrp}
-                    onChange={handleInputChange}
-                    placeholder="Maximum Retail Price"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label>Quantity *</Label>
-                  <Input
-                    name="quantity"
-                    type="number"
-                    value={formData.quantity}
-                    onChange={handleInputChange}
-                    placeholder="Stock quantity"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label>Unit Price *</Label>
-                  <Input
-                    name="unitPrice"
-                    type="number"
-                    step="0.01"
-                    value={formData.unitPrice}
-                    onChange={handleInputChange}
-                    placeholder="Cost per unit"
-                    required
-                  />
-                </div>
-                {formData.quantity && formData.unitPrice && (
-                  <div className="flex items-end">
-                    <div>
-                      <Label>Amount</Label>
-                      <div className="text-2xl font-bold text-primary">
-                        ₹{(parseFloat(formData.quantity) * parseFloat(formData.unitPrice)).toFixed(2)}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Photo Upload */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Medicine Photo</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Upload Photo</Label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="cursor-pointer"
-                />
-              </div>
-              {imagePreview && (
-                <div className="mt-4">
-                  <img src={imagePreview} alt="Preview" className="max-h-48 rounded-lg" />
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Additional Notes */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Additional Notes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <textarea
-                name="notes"
-                value={formData.notes}
-                onChange={handleInputChange}
-                placeholder="Any additional notes (optional)"
-                className="w-full border rounded-md p-2 min-h-24"
-              />
-            </CardContent>
-          </Card>
-
-          <div className="flex gap-3 justify-end">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Adding..." : "Add Medicine"}
-            </Button>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="batchNumber">Batch Number</Label>
+            <Input
+              id="batchNumber"
+              value={form.batchNumber}
+              onChange={(e) => setForm((f) => ({ ...f, batchNumber: e.target.value }))}
+              placeholder="Batch no."
+            />
           </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+          <div className="space-y-2">
+            <Label htmlFor="mfgDate">Mfg Date</Label>
+            <Input
+              id="mfgDate"
+              type="date"
+              value={form.mfgDate}
+              onChange={(e) => setForm((f) => ({ ...f, mfgDate: e.target.value }))}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="expiryDate">Expiry Date</Label>
+          <Input
+            id="expiryDate"
+            type="date"
+            value={form.expiryDate}
+            onChange={(e) => setForm((f) => ({ ...f, expiryDate: e.target.value }))}
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="mrp">MRP (₹)</Label>
+            <Input
+              id="mrp"
+              type="number"
+              step="0.01"
+              value={form.mrp}
+              onChange={(e) => setForm((f) => ({ ...f, mrp: e.target.value }))}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="quantity">Quantity</Label>
+            <Input
+              id="quantity"
+              type="number"
+              value={form.quantity}
+              onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
+              required
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="sellingPrice">Selling Price (₹)</Label>
+            <Input
+              id="sellingPrice"
+              type="number"
+              step="0.01"
+              value={form.sellingPrice}
+              onChange={(e) => setForm((f) => ({ ...f, sellingPrice: e.target.value }))}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="discountPercent">Discount %</Label>
+            <Input
+              id="discountPercent"
+              type="number"
+              step="0.01"
+              value={form.discountPercent}
+              onChange={(e) => setForm((f) => ({ ...f, discountPercent: e.target.value }))}
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <Button type="submit" disabled={loading}>
+            {loading ? 'Adding...' : 'Add to Inventory'}
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/pharmacy/inventory">Cancel</Link>
+          </Button>
+        </div>
+      </form>
+    </div>
   )
 }

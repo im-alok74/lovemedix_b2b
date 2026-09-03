@@ -1,225 +1,187 @@
-import Link from "next/link"
-import { Suspense } from "react"
+import Link from 'next/link'
 
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { FaqSection } from "@/components/faq-section"
-import { JsonLd } from "@/components/seo/json-ld"
-import { SupportSection } from "@/components/support-section"
-import { ArticlesTeaser } from "@/components/home/articles-teaser"
-import { AvailableNearYou } from "@/components/home/available-near-you"
-import { BestValue, ThemedRails } from "@/components/home/best-value"
-import { Bestsellers } from "@/components/home/bestsellers"
-import { CategoryTiles } from "@/components/home/category-tiles"
-import { DoctorsRail } from "@/components/home/doctors-rail"
-import { HealthConditionsRail, type HealthCondition } from "@/components/home/health-conditions-rail"
-import { HealthPackages } from "@/components/home/health-packages"
-import { Hero } from "@/components/home/hero"
-import { NearbyPharmacies } from "@/components/home/nearby-pharmacies"
-import { PopularBrands } from "@/components/home/popular-brands"
-import { QuickActions } from "@/components/home/quick-actions"
-import { ReorderStrip } from "@/components/home/reorder-strip"
-import { SeoLinks } from "@/components/home/seo-links"
-import { TopManufacturers } from "@/components/home/top-manufacturers"
-import { TrustStrip } from "@/components/home/trust-strip"
-import { cachedPublic, TAGS, TTL } from "@/lib/cache"
-import { query } from "@/lib/db"
-import { HOME_TOP_FAQS } from "@/lib/faqs"
-import { buildMetadata, faqJsonld } from "@/lib/seo"
-import { SITE } from "@/lib/site"
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Building2, ShieldCheck, TrendingUp, Users, ArrowRight, CheckCircle2 } from 'lucide-react'
 
-export const metadata = buildMetadata({
-  description: SITE.description,
-  path: "/",
-  keywords: [
-    "online medicine delivery India",
-    "buy prescription medicines online",
-    "generic medicine substitutes",
-    "order medicines online",
-  ],
-})
-
-/**
- * Homepage.
- *
- * Rebuilt around one finding: the page was a brochure. Roughly 1,700 words, four
- * photographs, no `font-bold` anywhere, ten separate prescription calls-to-action, and
- * nine section headings styled identically so nothing looked more important than anything
- * else. For someone in Patna on a cheap Android that is a wall of small grey text with
- * nothing to look at.
- *
- * The rebuild inverts that. Every shopping section leads with real photography from live
- * pharmacy inventory, headings are bold and sized in three tiers, body copy has a 16px
- * floor, and there is exactly one prescription CTA in the page body.
- *
- * Sections are ordered by what a first-time visitor needs, and every data-driven one
- * returns `null` rather than rendering a heading over an empty grid — so an early-stage
- * marketplace reads as a short, deliberate page instead of a broken one.
- */
-
-// Kept for the data cache. Note the page itself is dynamic regardless: Header reads
-// cookies for the session and the delivery location, so this does not make it static.
-export const revalidate = 300
-
-async function loadHealthConditions(): Promise<HealthCondition[]> {
-  try {
-    return await query<HealthCondition>`
-      SELECT id, name, slug, description, icon
-      FROM health_conditions
-      WHERE is_active
-      ORDER BY display_order ASC
-      LIMIT 15
-    `
-  } catch (error) {
-    console.error("[homepage] health conditions failed:", error)
-    return []
-  }
-}
-
-/**
- * Cached: the health-condition taxonomy is seeded data that changes only when an admin
- * edits it, yet it was queried on every homepage render.
- */
-const getHealthConditions = cachedPublic(loadHealthConditions, ["health-conditions-rail"], {
-  revalidate: TTL.TAXONOMY,
-  tags: [TAGS.taxonomy],
-})
-
-/** Fixed-height placeholder so streaming a section in cannot shift the page. */
-function RailSkeleton({ height = "h-64" }: { height?: string }) {
-  return (
-    <div className="page-container py-8">
-      <div className={`skeleton ${height} w-full`} />
-    </div>
-  )
-}
-
-async function HealthConditions() {
-  const conditions = await getHealthConditions()
-  return <HealthConditionsRail conditions={conditions} />
+export const metadata = {
+  title: 'Davaa B2B - Pharmaceutical Procurement Platform',
+  description: 'The B2B platform connecting pharmacies with verified distributors for wholesale medicine procurement.',
 }
 
 export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col">
-      <Header />
-
-      <main id="main-content" className="flex-1">
-        {/* Search, one bold line, and real product photography — above the fold. */}
-        <Suspense fallback={<RailSkeleton height="h-72" />}>
-          <Hero />
-        </Suspense>
-
-        <QuickActions />
-
-        <TrustStrip />
-
-        {/* Signed-in customers with delivered orders only; silent otherwise. */}
-        <Suspense fallback={null}>
-          <ReorderStrip />
-        </Suspense>
-
-        {/* Leads the browse blocks: most people arrive with a problem ("acidity",
-            "blood pressure") rather than a product or a shelf name, so the first thing
-            offered is the one they can answer without knowing any brand. */}
-        <Suspense fallback={<RailSkeleton height="h-56" />}>
-          <HealthConditions />
-        </Suspense>
-
-        {/* Then by shelf, with the page's first block of real photography. */}
-        <Suspense fallback={<RailSkeleton height="h-56" />}>
-          <CategoryTiles />
-        </Suspense>
-
-        <Suspense fallback={<RailSkeleton />}>
-          <BestValue />
-        </Suspense>
-
-        {/* Location-driven: which nearby pharmacy has it, and for how much. */}
-        <Suspense fallback={<RailSkeleton />}>
-          <AvailableNearYou />
-        </Suspense>
-
-        {/* Whichever shelves are actually stocked deeply enough to fill a rail. */}
-        <Suspense fallback={<RailSkeleton />}>
-          <ThemedRails />
-        </Suspense>
-
-        <Suspense fallback={<RailSkeleton height="h-48" />}>
-          <NearbyPharmacies />
-        </Suspense>
-
-        {/* Both silent until real data exists — see the note in each component. */}
-        <Suspense fallback={null}>
-          <HealthPackages />
-        </Suspense>
-
-        <Suspense fallback={null}>
-          <PopularBrands />
-        </Suspense>
-
-        {/* Browse by maker. Unlike PopularBrands above — which is scoped to what is on a
-            shelf today and so is silent at launch — this counts the whole active
-            catalogue, where 75 real manufacturers each have hundreds of products. */}
-        <Suspense fallback={<RailSkeleton height="h-40" />}>
-          <TopManufacturers />
-        </Suspense>
-
-        {/* Renders only once there is enough real order history to rank honestly. */}
-        <Suspense fallback={null}>
-          <Bestsellers />
-        </Suspense>
-
-        {/* Silent until the first verified doctor is onboarded. */}
-        <Suspense fallback={null}>
-          <DoctorsRail />
-        </Suspense>
-
-        {/* The safety net, placed where someone who did not find their medicine is
-            most likely to give up. */}
-        <SupportSection />
-
-        <Suspense fallback={null}>
-          <ArticlesTeaser />
-        </Suspense>
-
-        {/* ---- Partner CTAs -------------------------------------------------- */}
-        <section aria-labelledby="partner-heading" className="border-t border-border py-8">
-          <div className="page-container">
-            <h2 id="partner-heading" className="home-h3">
-              Run a pharmacy or supply medicines?
-            </h2>
-            <p className="home-meta mt-1">
-              <Link href="/pharmacy/register" className="home-link">
-                List your pharmacy
-              </Link>
-              <span className="mx-2">·</span>
-              <Link href="/distributor/register" className="home-link">
-                Register as a distributor
-              </Link>
-            </p>
+      <main className="flex-1">
+        {/* Hero */}
+        <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background py-20 lg:py-32">
+          <div className="container mx-auto px-4">
+            <div className="mx-auto max-w-3xl text-center">
+              <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
+                <Building2 className="h-4 w-4" />
+                B2B Pharmaceutical Procurement
+              </div>
+              <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+                Connect. Procure. <span className="text-primary">Grow.</span>
+              </h1>
+              <p className="mt-6 text-lg text-muted-foreground sm:text-xl">
+                The trusted B2B platform for pharmacies and distributors. Bulk procurement, verified partners, and streamlined inventory management.
+              </p>
+              <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+                <Button size="lg" asChild>
+                  <Link href="/pharmacy/register">
+                    Register Pharmacy <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" asChild>
+                  <Link href="/distributor/register">
+                    Register Distributor <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+              <div className="mt-6">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/signin">Already have an account? Sign in</Link>
+                </Button>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* Four questions, not eight. Every answer ships in the initial HTML even while
-            collapsed, so the other four now live on /faq instead of costing every
-            first-time visitor ~220 words of hidden text. */}
-        <FaqSection
-          faqs={HOME_TOP_FAQS}
-          description={`Common questions about ordering medicines on ${SITE.name}.`}
-          moreHref="/faq"
-        />
+        {/* Features */}
+        <section className="py-20">
+          <div className="container mx-auto px-4">
+            <div className="mx-auto max-w-2xl text-center">
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Built for B2B pharmaceutical trade
+              </h2>
+              <p className="mt-4 text-lg text-muted-foreground">
+                Everything you need to manage procurement, inventory, and partner relationships.
+              </p>
+            </div>
 
-        <Suspense fallback={null}>
-          <SeoLinks />
-        </Suspense>
+            <div className="mx-auto mt-16 grid max-w-5xl gap-8 sm:grid-cols-2 lg:grid-cols-4">
+              <Card className="border-border/70 shadow-sm">
+                <CardHeader>
+                  <ShieldCheck className="h-8 w-8 text-primary" />
+                  <CardTitle className="mt-4">Verified Partners</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Every pharmacy and distributor undergoes document verification before accessing the platform.
+                  </p>
+                </CardContent>
+              </Card>
 
-        {/* Mirrors exactly the questions rendered above — Google requires FAQPage markup
-            to match what the visitor can actually see on the page. */}
-        <JsonLd data={faqJsonld(HOME_TOP_FAQS)} id="ld-home-faq" />
+              <Card className="border-border/70 shadow-sm">
+                <CardHeader>
+                  <TrendingUp className="h-8 w-8 text-primary" />
+                  <CardTitle className="mt-4">Bulk Procurement</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Place bulk orders directly from distributors with transparent pricing and batch tracking.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-border/70 shadow-sm">
+                <CardHeader>
+                  <Users className="h-8 w-8 text-primary" />
+                  <CardTitle className="mt-4">Inventory Management</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Full shop management with customer tracking, purchase records, sales, and billing.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-border/70 shadow-sm">
+                <CardHeader>
+                  <Building2 className="h-8 w-8 text-primary" />
+                  <CardTitle className="mt-4">Demand Requests</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Request medicines not on the platform or currently out of stock directly from distributors.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        {/* How it works */}
+        <section className="bg-muted/30 py-20">
+          <div className="container mx-auto px-4">
+            <div className="mx-auto max-w-2xl text-center">
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">How it works</h2>
+            </div>
+
+            <div className="mx-auto mt-16 grid max-w-4xl gap-8 sm:grid-cols-3">
+              <div className="text-center">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <span className="text-lg font-bold">1</span>
+                </div>
+                <h3 className="mt-4 text-lg font-semibold">Register & Verify</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Sign up as a pharmacy or distributor. Submit your business documents for admin verification.
+                </p>
+              </div>
+
+              <div className="text-center">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <span className="text-lg font-bold">2</span>
+                </div>
+                <h3 className="mt-4 text-lg font-semibold">Access Dashboard</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Once approved, access your role-specific dashboard with all the tools you need.
+                </p>
+              </div>
+
+              <div className="text-center">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <span className="text-lg font-bold">3</span>
+                </div>
+                <h3 className="mt-4 text-lg font-semibold">Trade & Grow</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Browse medicines, place bulk orders, manage inventory, and grow your business.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section className="py-20">
+          <div className="container mx-auto px-4">
+            <div className="mx-auto max-w-2xl rounded-3xl border border-primary/20 bg-primary/5 p-8 text-center sm:p-12">
+              <h2 className="text-3xl font-bold tracking-tight">Ready to get started?</h2>
+              <p className="mt-4 text-lg text-muted-foreground">
+                Join the B2B pharmaceutical procurement platform trusted by pharmacies and distributors across India.
+              </p>
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+                <Button size="lg" asChild>
+                  <Link href="/pharmacy/register">
+                    Register as Pharmacy <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" asChild>
+                  <Link href="/distributor/register">
+                    Register as Distributor <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+              <div className="mt-6">
+                <Button variant="link" asChild>
+                  <Link href="/signin">Sign in to existing account</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
-
-      <Footer />
     </div>
   )
 }

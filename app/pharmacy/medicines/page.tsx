@@ -1,73 +1,165 @@
-import { redirect } from "next/navigation"
-import { getCurrentUser } from "@/lib/auth-server"
-import { sql } from "@/lib/db"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import PharmacyMedicinesList from "@/components/pharmacy/pharmacy-medicines-list"
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import { Header } from '@/components/header'
+import { Footer } from '@/components/footer'
+import { requirePharmacyProfile } from '@/lib/auth'
+import { sql } from '@/lib/db'
+import { Button } from '@/components/ui/button'
+import { Plus, Search } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
 
-export default async function PharmacyMedicinesPage() {
-  const user = await getCurrentUser()
+export default async function PharmacyMedicinesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ search?: string; category?: string }>
+}) {
+  const { pharmacyId } = await requirePharmacyProfile()
+  const params = await searchParams
+  const search = params.search || ''
+  const category = params.category || ''
 
-  if (!user || user.user_type !== "pharmacy") {
-    redirect("/signin")
+  const where: string[] = ["m.status = 'ACTIVE'"]
+  if (search) {
+    where.push(`(m.name ILIKE '%${search.replace(/'/g, "''")}%' OR m.generic_name ILIKE '%${search.replace(/'/g, "''")}%')`)
   }
-
-  // Get pharmacy profile
-  const pharmacyResult = await sql`
-    SELECT p.id, p.pharmacy_name, p.verification_status
-    FROM pharmacy_profiles p
-    WHERE p.user_id = ${user.id}
-  ` as any[]
-
-  if (!pharmacyResult || pharmacyResult.length === 0) {
-    return (
-      <div className="p-8">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-700">Pharmacy profile not found. Please complete your registration.</p>
-        </div>
-      </div>
-    )
+  if (category) {
+    where.push(`m.category_id = ${category}`)
   }
+  const whereSql = where.join(' AND ')
 
-  const pharmacy = pharmacyResult[0]
+  const medicines = await sql`
+    SELECT
+      m.id,
+      m.name,
+      m.generic_name,
+      m.manufacturer,
+      m.form,
+      m.strength,
+      m.pack_size,
+      m.mrp,
+      m.photo_url,
+      c.name AS category_name,
+      COALESCE(
+        json_agg(mi.image_url) FILTER (WHERE mi.image_url IS NOT NULL),
+        '[]'
+      ) AS images
+    FROM medicines m
+    LEFT JOIN categories c ON c.id = m.category_id
+    LEFT JOIN medicine_images mi ON mi.medicine_id = m.id
+    WHERE ${sql.unsafe(whereSql)}
+    GROUP BY m.id, c.id
+    ORDER BY m.name ASC
+    LIMIT 50
+  `
 
-  if (pharmacy.verification_status !== "verified") {
-    return (
-      <div className="p-8">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <p className="text-yellow-700">Your pharmacy is not yet verified. You can manage medicines once your profile is verified.</p>
-        </div>
-      </div>
-    )
-  }
+  const categories = await sql`
+    SELECT id, name FROM categories WHERE is_active = true ORDER BY display_order ASC, name ASC
+  `
 
   return (
-    <div className="space-y-6 p-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Manage Medicines</h1>
-          <p className="text-muted-foreground">
-            Remove medicines from your store so they no longer show on the home page or customer listings.
-          </p>
+    <div className="flex min-h-screen flex-col">
+      <Header />
+      <main className="flex-1">
+        <div className="container mx-auto px-4 py-8">
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Medicine Catalog</h1>
+              <p className="text-muted-foreground mt-1">Browse available medicines and add to your inventory</p>
+            </div>
+            <Button asChild>
+              <Link href="/pharmacy/medicines/add">
+                <Plus className="mr-2 h-4 w-4" />
+                Add to Inventory
+              </Link>
+            </Button>
+          </div>
+
+          <div className="mb-6 flex gap-4">
+            <form action="/pharmacy/medicines" method="get" className="flex-1 flex gap-2">
+              <Input
+                name="search"
+                placeholder="Search medicines..."
+                defaultValue={search}
+                className="max-w-sm"
+              />
+              <Button type="submit" variant="outline">
+                <Search className="h-4 w-4" />
+              </Button>
+            </form>
+            <form action="/pharmacy/medicines" method="get" className="flex gap-2">
+              <select
+                name="category"
+                defaultValue={category}
+                className="border rounded-md px-3 py-2 text-sm"
+              >
+                <option value="">All Categories</option>
+                {(categories as any[]).map((c: any) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <Button type="submit" variant="outline">Filter</Button>
+            </form>
+          </div>
+
+          <div className="rounded-lg border border-border bg-card">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Medicine</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Form</TableHead>
+                  <TableHead>Strength</TableHead>
+                  <TableHead>MRP</TableHead>
+                  <TableHead>Manufacturer</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(medicines as any[]).map((med) => (
+                  <TableRow key={med.id}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-3">
+                        {med.images?.[0] || med.photo_url ? (
+                          <img
+                            src={med.images?.[0] || med.photo_url}
+                            alt={med.name}
+                            className="h-10 w-10 rounded-md border object-cover"
+                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+                          />
+                        ) : null}
+                        <div>
+                          <div>{med.name}</div>
+                          <div className="text-xs text-muted-foreground">{med.generic_name}</div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{med.category_name || '-'}</TableCell>
+                    <TableCell>{med.form || '-'}</TableCell>
+                    <TableCell>{med.strength || '-'}</TableCell>
+                    <TableCell>₹{Number(med.mrp).toFixed(2)}</TableCell>
+                    <TableCell>{med.manufacturer || '-'}</TableCell>
+                    <TableCell>
+                      <Button asChild size="sm" variant="outline">
+                        <Link href={`/pharmacy/medicines/${med.id}`}>View</Link>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
-        <Button asChild variant="outline" className="bg-transparent">
-          <Link href="/pharmacy/publish-to-store">Publish to Store</Link>
-        </Button>
-      </div>
-
-      <Card>
-        <CardContent className="p-6">
-          <p className="text-sm text-muted-foreground">
-            Medicines with stock in your verified pharmacy are shown below. Use remove to take them off the storefront.
-          </p>
-          <p className="text-sm text-muted-foreground mt-2">
-            You can always add them back later by publishing stock again.
-          </p>
-        </CardContent>
-      </Card>
-
-      <PharmacyMedicinesList />
+      </main>
+      <Footer />
     </div>
   )
 }

@@ -1,193 +1,69 @@
-import { NextRequest, NextResponse } from "next/server"
-import { getCurrentUser } from "@/lib/auth-server"
-import { sql } from "@/lib/db"
+import { NextRequest, NextResponse } from 'next/server'
+import { requirePharmacyProfile } from '@/lib/auth'
+import { sql } from '@/lib/db'
+
+const MAX_PAGE_SIZE = 50
 
 export async function GET(request: NextRequest) {
-  const user = await getCurrentUser()
-  if (!user || user.user_type !== "pharmacy") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
   try {
-    // Get pharmacy profile
-    const pharmacyResult = await sql`
-      SELECT id FROM pharmacy_profiles WHERE user_id = ${user.id}
+    const { pharmacyId } = await requirePharmacyProfile()
+    const { searchParams } = new URL(request.url)
+    const page = Math.max(1, Number(searchParams.get('page') || '1'))
+    const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, Number(searchParams.get('limit') || '10')))
+    const status = searchParams.get('status')?.trim() || ''
+    const search = searchParams.get('search')?.trim() || ''
+    const offset = (page - 1) * limit
+
+    const countRow = await sql<{ total: string }>`
+      SELECT COUNT(*)::text AS total
+      FROM out_of_stock_requests osr
+      JOIN medicines m ON m.id = osr.medicine_id
+      JOIN distributor_profiles dp ON dp.id = osr.distributor_id
+      WHERE osr.pharmacy_id = ${pharmacyId}
+        ${status ? sql`AND osr.status = ${status}` : sql``}
+        ${search ? sql`AND (m.name ILIKE ${'%' + search + '%'} OR dp.company_name ILIKE ${'%' + search + '%'})` : sql``}
+    `
+    const total = Number(countRow[0]?.total || 0)
+
+    const requests = await sql`
+      SELECT
+        osr.id,
+        osr.pharmacy_id,
+        osr.distributor_id,
+        osr.medicine_id,
+        osr.distributor_medicine_id,
+        osr.requested_quantity,
+        osr.mrp,
+        osr.unit_price,
+        osr.status,
+        osr.notes,
+        osr.fulfilled_at,
+        osr.created_at,
+        osr.updated_at,
+        m.name AS medicine_name,
+        m.generic_name,
+        m.manufacturer,
+        dp.company_name AS distributor_name
+      FROM out_of_stock_requests osr
+      JOIN medicines m ON m.id = osr.medicine_id
+      JOIN distributor_profiles dp ON dp.id = osr.distributor_id
+      WHERE osr.pharmacy_id = ${pharmacyId}
+        ${status ? sql`AND osr.status = ${status}` : sql``}
+        ${search ? sql`AND (m.name ILIKE ${'%' + search + '%'} OR dp.company_name ILIKE ${'%' + search + '%'})` : sql``}
+      ORDER BY osr.created_at DESC
+      LIMIT ${limit} OFFSET ${offset}
     `
 
-    if (pharmacyResult.length === 0) {
-      return NextResponse.json({ error: "Pharmacy not found" }, { status: 404 })
-    }
-
-    const pharmacyId = pharmacyResult[0].id
-    const { searchParams } = new URL(request.url)
-    const status = searchParams.get("status")
-    const page = parseInt(searchParams.get("page") || "1")
-    const pageSize = parseInt(searchParams.get("pageSize") || "10")
-
-    const offset = (page - 1) * pageSize
-
-    const hasStatusFilter = Boolean(status && status !== "all")
-    const results = hasStatusFilter
-      ? await sql`
-          SELECT 
-            osr.id,
-            osr.distributor_id,
-            osr.medicine_id,
-            osr.requested_quantity,
-            osr.mrp,
-            osr.unit_price,
-            osr.status,
-            osr.notes,
-            osr.created_at,
-            osr.fulfilled_at,
-            dp.distributor_name,
-            m.medicine_name,
-            m.generic_name
-          FROM medicine_out_of_stock_requests osr
-          LEFT JOIN distributor_profiles dp ON osr.distributor_id = dp.id
-          LEFT JOIN medicines m ON osr.medicine_id = m.id
-          WHERE osr.pharmacy_id = ${pharmacyId}
-            AND osr.status = ${status}
-          ORDER BY osr.created_at DESC
-          LIMIT ${pageSize} OFFSET ${offset}
-        `
-      : await sql`
-          SELECT 
-            osr.id,
-            osr.distributor_id,
-            osr.medicine_id,
-            osr.requested_quantity,
-            osr.mrp,
-            osr.unit_price,
-            osr.status,
-            osr.notes,
-            osr.created_at,
-            osr.fulfilled_at,
-            dp.distributor_name,
-            m.medicine_name,
-            m.generic_name
-          FROM medicine_out_of_stock_requests osr
-          LEFT JOIN distributor_profiles dp ON osr.distributor_id = dp.id
-          LEFT JOIN medicines m ON osr.medicine_id = m.id
-          WHERE osr.pharmacy_id = ${pharmacyId}
-          ORDER BY osr.created_at DESC
-          LIMIT ${pageSize} OFFSET ${offset}
-        `
-
-    // Get total count
-    const countResult = hasStatusFilter
-      ? await sql`
-          SELECT COUNT(*) as total FROM medicine_out_of_stock_requests
-          WHERE pharmacy_id = ${pharmacyId}
-            AND status = ${status}
-        `
-      : await sql`
-          SELECT COUNT(*) as total FROM medicine_out_of_stock_requests
-          WHERE pharmacy_id = ${pharmacyId}
-        `
-
-    const total = countResult[0]?.total || 0
-
-    return NextResponse.json({
-      data: results,
+    return ok({
+      items: requests,
       pagination: {
         total,
         page,
-        pageSize,
-        totalPages: Math.ceil(total / pageSize),
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
     })
   } catch (error) {
-    console.error("Error fetching pharmacy out-of-stock requests:", error)
-    return NextResponse.json(
-      { error: "Failed to fetch requests" },
-      { status: 500 }
-    )
-  }
-}
-
-export async function POST(request: NextRequest) {
-  const user = await getCurrentUser()
-  if (!user || user.user_type !== "pharmacy") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
-  try {
-    const body = await request.json()
-    const {
-      distributor_id,
-      medicine_id,
-      distributor_medicine_id,
-      requested_quantity,
-      mrp,
-      unit_price,
-      notes,
-    } = body
-
-    // Validate input
-    if (
-      !distributor_id ||
-      !medicine_id ||
-      !distributor_medicine_id ||
-      !requested_quantity
-    ) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      )
-    }
-
-    // Get pharmacy profile
-    const pharmacyResult = await sql`
-      SELECT id FROM pharmacy_profiles WHERE user_id = ${user.id}
-    `
-
-    if (pharmacyResult.length === 0) {
-      return NextResponse.json({ error: "Pharmacy not found" }, { status: 404 })
-    }
-
-    const pharmacyId = pharmacyResult[0].id
-
-    // Check if pharmacy already has a pending/assigned request for this medicine
-    const existingResult = await sql`
-      SELECT id FROM medicine_out_of_stock_requests
-      WHERE pharmacy_id = ${pharmacyId} AND medicine_id = ${medicine_id} AND status IN ('pending', 'assigned')
-    `
-
-    if (existingResult.length > 0) {
-      return NextResponse.json(
-        { error: "You already have an active request for this medicine" },
-        { status: 400 }
-      )
-    }
-
-    // Create out-of-stock request
-    const result = await sql`
-      INSERT INTO medicine_out_of_stock_requests (
-        pharmacy_id, distributor_id, medicine_id, distributor_medicine_id,
-        requested_quantity, mrp, unit_price, status, notes, created_at, updated_at
-      ) VALUES (${pharmacyId}, ${distributor_id}, ${medicine_id}, ${distributor_medicine_id},
-        ${requested_quantity}, ${mrp || null}, ${unit_price || null}, 'pending', ${notes || null}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-      RETURNING *
-    `
-
-    // Log audit trail
-    await sql`
-      INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, created_at)
-      VALUES (${user.id}, 'create_out_of_stock_request', 'medicine_out_of_stock_requests', ${result[0].id},
-        ${JSON.stringify({
-          medicine_id,
-          distributor_id,
-          quantity: requested_quantity,
-        })}, CURRENT_TIMESTAMP)
-    `
-
-    return NextResponse.json(result[0], { status: 201 })
-  } catch (error) {
-    console.error("Error creating out-of-stock request:", error)
-    return NextResponse.json(
-      { error: "Failed to create request" },
-      { status: 500 }
-    )
+    return handleApiError(error, 'PHARMACY OUT OF STOCK REQUESTS')
   }
 }

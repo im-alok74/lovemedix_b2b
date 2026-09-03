@@ -1,141 +1,80 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth-server'
+import { requirePharmacyProfile } from '@/lib/auth'
 import { sql } from '@/lib/db'
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const user = await getCurrentUser()
-    
-    if (!user || user.user_type !== 'pharmacy') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const { pharmacyId } = await requirePharmacyProfile()
+    const medicineId = Number((await params).id)
+
+    if (Number.isNaN(medicineId)) {
+      return badRequest('Invalid medicine id')
     }
 
-    // Await params if it's a Promise
-    const resolvedParams = await Promise.resolve(params)
-    const medicineId = Number(resolvedParams.id)
-
-    if (isNaN(medicineId)) {
-      return NextResponse.json({ error: 'Invalid medicine ID' }, { status: 400 })
-    }
-
-    // Get pharmacy profile
-    const pharmacyResult = await sql`
-      SELECT id FROM pharmacy_profiles WHERE user_id = ${user.id}
-    ` as any[]
-
-    if (!pharmacyResult || pharmacyResult.length === 0) {
-      return NextResponse.json({ error: 'Pharmacy not found' }, { status: 404 })
-    }
-
-    const pharmacyId = pharmacyResult[0].id
-
-    const body = await request.json()
-    const {
-      hsnCode,
-      batchNumber,
-      mfgDate,
-      expiryDate,
-      mrp,
-      quantity,
-      unitPrice,
-      notes
-    } = body
-
-    // Verify ownership
-    const ownership = await sql`
-      SELECT id FROM pharmacy_medicines 
-      WHERE id = ${medicineId} AND pharmacy_id = ${pharmacyId}
-    ` as any[]
-
-    if (!ownership || ownership.length === 0) {
-      return NextResponse.json({ error: 'Medicine not found or unauthorized' }, { status: 404 })
-    }
-
-    // Calculate amount
-    const amount = parseFloat(quantity) * parseFloat(unitPrice)
-
-    // Update medicine
-    await sql`
-      UPDATE pharmacy_medicines
-      SET 
-        hsn_code = ${hsnCode || 'N/A'},
-        batch_number = ${batchNumber || 'N/A'},
-        mfg_date = ${mfgDate || null},
-        expiry_date = ${expiryDate},
-        mrp = ${mrp},
-        quantity = ${quantity},
-        unit_price = ${unitPrice},
-        amount = ${amount},
-        notes = ${notes || null},
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = ${medicineId}
+    const medicineRows = await sql`
+      SELECT
+        m.id,
+        m.name,
+        m.generic_name,
+        m.manufacturer,
+        m.form,
+        m.strength,
+        m.pack_size,
+        m.mrp,
+        m.gst_rate,
+        m.requires_prescription,
+        m.photo_url,
+        m.status,
+        m.slug,
+        m.description,
+        c.name AS category_name,
+        COALESCE(
+          json_agg(mi.image_url) FILTER (WHERE mi.image_url IS NOT NULL),
+          '[]'
+        ) AS images
+      FROM medicines m
+      LEFT JOIN categories c ON c.id = m.category_id
+      LEFT JOIN medicine_images mi ON mi.medicine_id = m.id
+      WHERE m.id = ${medicineId} AND m.status = 'ACTIVE'
+      GROUP BY m.id, c.id
+      LIMIT 1
     `
 
-    return NextResponse.json({
-      success: true,
-      message: 'Medicine updated successfully'
-    })
-  } catch (error: any) {
-    console.error('[PHARMACY MEDICINES] Error updating medicine:', error)
-    return NextResponse.json(
-      { error: 'Failed to update medicine', details: String(error) },
-      { status: 500 }
-    )
-  }
-}
-
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const user = await getCurrentUser()
-    
-    if (!user || user.user_type !== 'pharmacy') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!medicineRows.length) {
+      return notFound('Medicine not found')
     }
 
-    // Await params if it's a Promise
-    const resolvedParams = await Promise.resolve(params)
-    const medicineId = Number(resolvedParams.id)
-
-    if (isNaN(medicineId)) {
-      return NextResponse.json({ error: 'Invalid medicine ID' }, { status: 400 })
-    }
-
-    // Get pharmacy profile
-    const pharmacyResult = await sql`
-      SELECT id FROM pharmacy_profiles WHERE user_id = ${user.id}
-    ` as any[]
-
-    if (!pharmacyResult || pharmacyResult.length === 0) {
-      return NextResponse.json({ error: 'Pharmacy not found' }, { status: 404 })
-    }
-
-    const pharmacyId = pharmacyResult[0].id
-
-    // Verify ownership
-    const ownership = await sql`
-      SELECT id FROM pharmacy_medicines 
-      WHERE id = ${medicineId} AND pharmacy_id = ${pharmacyId}
-    ` as any[]
-
-    if (!ownership || ownership.length === 0) {
-      return NextResponse.json({ error: 'Medicine not found or unauthorized' }, { status: 404 })
-    }
-
-    // Delete medicine
-    await sql`
-      DELETE FROM pharmacy_medicines
-      WHERE id = ${medicineId}
+    const listings = await sql`
+      SELECT
+        dm.id AS distributor_medicine_id,
+        dm.unit_price,
+        dm.quantity,
+        dm.reserved_quantity,
+        (dm.quantity - dm.reserved_quantity) AS available_quantity,
+        dm.batch_number,
+        dm.expiry_date,
+        dm.hsn_code,
+        dp.id AS distributor_id,
+        dp.company_name,
+        dp.city AS distributor_city,
+        dp.state AS distributor_state
+      FROM distributor_medicines dm
+      JOIN distributor_profiles dp ON dp.id = dm.distributor_id
+      WHERE dm.medicine_id = ${medicineId}
+        AND dm.is_active = true
+        AND dm.quantity > dm.reserved_quantity
+        AND dp.verification_status = 'VERIFIED'
+      ORDER BY dm.unit_price ASC
     `
 
-    return NextResponse.json({
-      success: true,
-      message: 'Medicine removed successfully'
+    return ok({
+      medicine: medicineRows[0],
+      distributor_listings: listings,
     })
-  } catch (error: any) {
-    console.error('[PHARMACY MEDICINES] Error deleting medicine:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete medicine', details: String(error) },
-      { status: 500 }
-    )
+  } catch (error) {
+    return handleApiError(error, 'PHARMACY MEDICINE DETAIL')
   }
 }

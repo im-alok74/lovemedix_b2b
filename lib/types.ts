@@ -1,15 +1,40 @@
-export interface User {
+export type UserRole = 'ADMIN' | 'PHARMACY' | 'DISTRIBUTOR'
+export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
+export type VerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED'
+export type PurchaseStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'COMPLETED'
+export type PaymentStatus = 'PENDING' | 'PAID' | 'PARTIAL' | 'FAILED' | 'REFUNDED'
+export type OutOfStockStatus = 'PENDING' | 'FULFILLED' | 'CANCELLED'
+export type B2BOrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'
+export type MedicineStatus = 'ACTIVE' | 'INACTIVE' | 'DRAFT'
+export type DocumentProfileType = 'PHARMACY' | 'DISTRIBUTOR'
+export type DocumentType = 'LICENSE' | 'GST' | 'ADDRESS_PROOF' | 'IDENTITY_PROOF' | 'OTHER'
+export type AdminRole = 'SUPER_ADMIN' | 'OPERATIONS' | 'SUPPORT'
+
+export interface SessionUser {
   id: number
   email: string
-  full_name: string
+  fullName: string
   phone: string | null
-  user_type: "customer" | "pharmacy" | "distributor" | "admin"
-  status: string
+  role: UserRole
+  status: UserStatus
 }
 
-export interface Session {
-  id: number
-  user_id: number
-  session_token: string
-  expires_at: Date
+export interface ApiResponse<T = unknown> {
+  success: boolean
+  data?: T
+  error?: string
+  message?: string
+}
+
+export interface PaginatedResponse<T> {
+  items: T[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
+export interface PaginationParams {
+  page: number
+  limit: number
 }

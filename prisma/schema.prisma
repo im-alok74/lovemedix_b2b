@@ -1,0 +1,541 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique @db.VarChar(255)
+  passwordHash  String   @db.VarChar(255) @map("password_hash")
+  fullName      String   @db.VarChar(150) @map("full_name")
+  phone         String?  @db.VarChar(20)
+  role          UserRole @default(PHARMACY) @map("user_type")
+  status        UserStatus @default(ACTIVE)
+  failedLogins  Int      @default(0) @map("failed_login_count")
+  lockedUntil   DateTime? @map("locked_until")
+  lastLoginAt   DateTime? @map("last_login_at")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sessions      Session[]
+  pharmacyProfile PharmacyProfile?
+  distributorProfile DistributorProfile?
+  adminProfile  AdminProfile?
+
+  verifiedPharmacies PharmacyProfile[] @relation("PharmacyVerifier")
+  verifiedDistributors DistributorProfile[] @relation("DistributorVerifier")
+
+  @@map("users")
+}
+
+model Session {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  token       String   @unique @db.VarChar(128) @map("session_token")
+  expiresAt   DateTime @map("expires_at")
+  userAgent   String? @map("user_agent")
+  ipAddress   String?  @db.VarChar(45) @map("ip_address")
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model PharmacyProfile {
+  id                  Int       @id @default(autoincrement())
+  userId              Int       @unique @map("user_id")
+  pharmacyName        String    @db.VarChar(255) @map("pharmacy_name")
+  registrationNumber  String?   @db.VarChar(100) @map("registration_number")
+  gstNumber           String?   @db.VarChar(15) @map("gst_number")
+  contactPerson       String?   @db.VarChar(150) @map("contact_person")
+  phone               String?   @db.VarChar(20)
+  email               String?   @db.VarChar(255)
+  addressLine1        String    @db.VarChar(255) @map("address_line1")
+  addressLine2        String?   @db.VarChar(255) @map("address_line2")
+  city                String    @db.VarChar(100)
+  state               String    @db.VarChar(100)
+  pincode             String    @db.VarChar(10)
+  country             String    @default("India") @db.VarChar(100)
+  licenseNumber       String?   @db.VarChar(100) @map("license_number")
+  licenseExpiry       DateTime? @map("license_expiry")
+  verificationStatus  VerificationStatus @default(PENDING) @map("verification_status")
+  verifiedAt          DateTime? @map("verified_at")
+  verifiedBy          Int?      @map("verified_by")
+  commissionRate      Decimal?  @db.Decimal(5, 2) @default(0) @map("commission_rate")
+  notes               String?   @db.Text
+  documents           Document[]
+  inventory           PharmacyInventory[]
+  orders              B2BOrder[]
+  purchaseRequests    PurchaseRequest[]
+  outOfStockRequests  OutOfStockRequest[]
+
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verifier            User?     @relation("PharmacyVerifier", fields: [verifiedBy], references: [id])
+
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@map("pharmacy_profiles")
+  @@index([verificationStatus])
+  @@index([userId])
+  @@index([city, state])
+}
+
+model DistributorProfile {
+  id                 Int       @id @default(autoincrement())
+  userId             Int       @unique @map("user_id")
+  companyName        String    @db.VarChar(255) @map("company_name")
+  businessLicense    String?   @db.VarChar(100) @map("business_license")
+  taxId              String?   @db.VarChar(50) @map("tax_id")
+  contactPerson      String?   @db.VarChar(150) @map("contact_person")
+  phone               String?   @db.VarChar(20)
+  email               String?   @db.VarChar(255)
+  addressLine1        String    @db.VarChar(255) @map("address_line1")
+  addressLine2        String?   @db.VarChar(255) @map("address_line2")
+  city                String    @db.VarChar(100)
+  state               String    @db.VarChar(100)
+  pincode             String    @db.VarChar(10)
+  country             String    @default("India") @db.VarChar(100)
+  serviceRadiusKm     Int?      @default(50) @map("service_radius_km")
+  verificationStatus  VerificationStatus @default(PENDING) @map("verification_status")
+  verifiedAt          DateTime? @map("verified_at")
+  verifiedBy          Int?      @map("verified_by")
+  commissionRate      Decimal?  @db.Decimal(5, 2) @default(0) @map("commission_rate")
+  isActive            Boolean   @default(true) @map("is_active")
+  notes               String?   @db.Text
+  documents           Document[]
+  medicines           DistributorMedicine[]
+  purchaseRequests    PurchaseRequest[]
+  outOfStockRequests  OutOfStockRequest[]
+  orders              B2BOrder[]
+
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verifier            User?     @relation("DistributorVerifier", fields: [verifiedBy], references: [id])
+
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@map("distributor_profiles")
+  @@index([verificationStatus])
+  @@index([userId])
+  @@index([city, state])
+}
+
+model AdminProfile {
+  id          Int      @id @default(autoincrement())
+  userId      Int       @unique @map("user_id")
+  role        AdminRole @default(SUPER_ADMIN)
+  permissions Json?    @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("admin_profiles")
+}
+
+model Document {
+  id                    Int              @id @default(autoincrement())
+  profileType           DocumentProfileType @map("profile_type")
+  pharmacyProfileId     Int?             @map("pharmacy_profile_id")
+  distributorProfileId  Int?             @map("distributor_profile_id")
+  documentType          DocumentType     @map("document_type")
+  fileName              String           @db.VarChar(255) @map("file_name")
+  fileUrl               String           @db.VarChar(500) @map("file_url")
+  fileSize              Int?             @map("file_size")
+  mimeType              String?          @db.VarChar(100) @map("mime_type")
+  verificationStatus    VerificationStatus @default(PENDING) @map("verification_status")
+  verifiedAt            DateTime?        @map("verified_at")
+  verifiedBy            Int?             @map("verified_by")
+  rejectionReason       String?          @map("rejection_reason")
+  expiresAt             DateTime?        @map("expires_at")
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  pharmacyProfile       PharmacyProfile?   @relation(fields: [pharmacyProfileId], references: [id], onDelete: Cascade)
+  distributorProfile    DistributorProfile? @relation(fields: [distributorProfileId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+  @@index([profileType, pharmacyProfileId])
+  @@index([profileType, distributorProfileId])
+  @@index([verificationStatus])
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique @db.VarChar(100)
+  slug        String   @unique @db.VarChar(100)
+  description String?  @db.Text
+  displayOrder Int     @default(0)
+  isActive    Boolean  @default(true)
+  icon        String?  @db.VarChar(100)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  medicines   Medicine[]
+
+  @@map("categories")
+  @@index([slug])
+}
+
+model Medicine {
+  id                  Int      @id @default(autoincrement())
+  name                String   @db.VarChar(255)
+  genericName         String?  @db.VarChar(255)
+  manufacturer        String?  @db.VarChar(255)
+  categoryId          Int?
+  form                String?  @db.VarChar(50)
+  strength            String?  @db.VarChar(50)
+  packSize            String?  @db.VarChar(50)
+  mrp                 Decimal  @db.Decimal(10, 2)
+  gstRate             Decimal  @default(5) @db.Decimal(5, 2)
+  requiresPrescription Boolean @default(false)
+  hsnCode             String?  @db.VarChar(20)
+  description         String?  @db.Text
+  photoUrl            String?  @db.VarChar(500)
+  status              MedicineStatus @default(ACTIVE)
+  slug                String   @unique @db.VarChar(300)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  category            Category?   @relation(fields: [categoryId], references: [id])
+  images              MedicineImage[]
+  distributorMedicines DistributorMedicine[]
+  pharmacyInventory   PharmacyInventory[]
+  purchaseItems       PurchaseItem[]
+  outOfStockRequests  OutOfStockRequest[]
+  b2bOrderItems       B2BOrderItem[]
+
+  @@map("medicines")
+  @@index([name, genericName])
+  @@index([categoryId])
+  @@index([slug])
+  @@index([status])
+}
+
+model MedicineImage {
+  id          Int      @id @default(autoincrement())
+  medicineId  Int
+  imageUrl    String   @db.VarChar(500)
+  altText     String?  @db.VarChar(255)
+  sortOrder   Int      @default(0)
+  source      String?  @db.VarChar(50)
+  createdAt   DateTime @default(now())
+
+  medicine    Medicine @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+
+  @@map("medicine_images")
+  @@index([medicineId])
+}
+
+model DistributorMedicine {
+  id              Int      @id @default(autoincrement())
+  distributorId   Int
+  medicineId      Int
+  batchNumber     String?  @db.VarChar(100)
+  mfgDate         DateTime?
+  expiryDate      DateTime
+  mrp             Decimal  @db.Decimal(10, 2)
+  quantity        Int
+  reservedQuantity Int     @default(0)
+  unitPrice       Decimal  @db.Decimal(10, 2)
+  amount          Decimal  @db.Decimal(12, 2) @default(0)
+  hsnCode         String?  @db.VarChar(20)
+  notes           String?  @db.Text
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  distributor     DistributorProfile @relation(fields: [distributorId], references: [id], onDelete: Cascade)
+  medicine        Medicine           @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+  purchaseItems   PurchaseItem[]
+  outOfStockRequests OutOfStockRequest[]
+  b2bOrderItems   B2BOrderItem[]
+
+  @@unique([distributorId, medicineId, batchNumber])
+  @@map("distributor_medicines")
+  @@index([distributorId])
+  @@index([medicineId])
+  @@index([expiryDate])
+}
+
+model PharmacyInventory {
+  id              Int      @id @default(autoincrement())
+  pharmacyId      Int
+  medicineId      Int
+  batchNumber     String?  @db.VarChar(100)
+  mfgDate         DateTime?
+  expiryDate      DateTime?
+  mrp             Decimal  @db.Decimal(10, 2)
+  quantity        Int      @default(0)
+  sellingPrice    Decimal  @db.Decimal(10, 2)
+  discountPercent Decimal? @db.Decimal(5, 2) @default(0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  pharmacy        PharmacyProfile @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
+  medicine        Medicine         @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+  b2bOrderItems   B2BOrderItem[]
+
+  @@unique([pharmacyId, medicineId, batchNumber])
+  @@map("pharmacy_inventory")
+  @@index([pharmacyId])
+  @@index([medicineId])
+}
+
+model PurchaseRequest {
+  id              Int      @id @default(autoincrement())
+  pharmacyId      Int
+  distributorId   Int
+  status          PurchaseStatus @default(PENDING)
+  totalAmount     Decimal  @db.Decimal(12, 2)
+  notes           String?  @db.Text
+  expiresAt       DateTime
+  fulfilledAt     DateTime?
+  cancelledAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  pharmacy        PharmacyProfile    @relation(fields: [pharmacyId], references: [id])
+  distributor     DistributorProfile @relation(fields: [distributorId], references: [id])
+  items           PurchaseItem[]
+  invoice         PurchaseInvoice?
+
+  @@map("purchase_requests")
+  @@index([pharmacyId, status])
+  @@index([distributorId, status])
+  @@index([expiresAt])
+}
+
+model PurchaseItem {
+  id                    Int      @id @default(autoincrement())
+  requestId             Int
+  distributorMedicineId Int?
+  medicineId            Int
+  pharmacyId            Int
+  distributorId         Int
+  quantity              Int
+  price                 Decimal  @db.Decimal(10, 2)
+  lineTotal             Decimal  @db.Decimal(12, 2)
+  batchNumber           String?  @db.VarChar(100)
+  expiryDate            DateTime?
+  createdAt             DateTime @default(now())
+
+  request               PurchaseRequest    @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  distributorMedicine   DistributorMedicine? @relation(fields: [distributorMedicineId], references: [id])
+  medicine              Medicine           @relation(fields: [medicineId], references: [id])
+
+  @@map("purchase_items")
+  @@index([requestId])
+}
+
+model PurchaseInvoice {
+  id                Int      @id @default(autoincrement())
+  requestId         Int      @unique
+  invoiceNumber     String   @unique @db.VarChar(50)
+  invoiceDate       DateTime @default(now())
+  dueDate           DateTime?
+  subtotal          Decimal  @db.Decimal(12, 2)
+  taxAmount         Decimal  @db.Decimal(12, 2) @default(0)
+  totalAmount       Decimal  @db.Decimal(12, 2)
+  paymentStatus     PaymentStatus @default(PENDING)
+  paidAt            DateTime?
+  paymentMethod     String?  @db.VarChar(50)
+  transactionRef    String?  @db.VarChar(255)
+  notes             String?  @db.Text
+  pdfUrl            String?  @db.VarChar(500)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  request           PurchaseRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@map("purchase_invoices")
+  @@index([requestId])
+  @@index([paymentStatus])
+}
+
+model OutOfStockRequest {
+  id                    Int      @id @default(autoincrement())
+  pharmacyId            Int
+  distributorId         Int
+  medicineId            Int
+  distributorMedicineId Int?
+  requestedQuantity     Int      @default(1)
+  mrp                   Decimal? @db.Decimal(10, 2)
+  unitPrice             Decimal? @db.Decimal(10, 2)
+  status                OutOfStockStatus @default(PENDING)
+  notes                 String?  @db.Text
+  fulfilledAt           DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  pharmacy              PharmacyProfile    @relation(fields: [pharmacyId], references: [id])
+  distributor           DistributorProfile @relation(fields: [distributorId], references: [id])
+  medicine              Medicine           @relation(fields: [medicineId], references: [id])
+  distributorMedicine   DistributorMedicine? @relation(fields: [distributorMedicineId], references: [id])
+
+  @@map("out_of_stock_requests")
+  @@index([pharmacyId, status])
+  @@index([distributorId, status])
+}
+
+model B2BOrder {
+  id              Int      @id @default(autoincrement())
+  orderNumber     String   @unique @db.VarChar(50)
+  pharmacyId      Int
+  distributorId   Int
+  subtotal        Decimal  @db.Decimal(12, 2)
+  taxAmount       Decimal  @db.Decimal(12, 2) @default(0)
+  discountAmount  Decimal  @db.Decimal(12, 2) @default(0)
+  totalAmount     Decimal  @db.Decimal(12, 2)
+  orderStatus     B2BOrderStatus @default(PENDING)
+  paymentStatus   PaymentStatus @default(PENDING)
+  paymentMethod   String?  @db.VarChar(50)
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  pharmacy        PharmacyProfile    @relation(fields: [pharmacyId], references: [id])
+  distributor     DistributorProfile @relation(fields: [distributorId], references: [id])
+  items           B2BOrderItem[]
+  statusHistory   B2BOrderStatusHistory[]
+
+  @@map("b2b_orders")
+  @@index([pharmacyId, orderStatus])
+  @@index([distributorId, orderStatus])
+  @@index([orderNumber])
+}
+
+model B2BOrderItem {
+  id                Int      @id @default(autoincrement())
+  orderId           Int
+  medicineId        Int
+  pharmacyInventoryId Int?
+  distributorMedicineId Int?
+  quantity          Int
+  unitPrice         Decimal  @db.Decimal(10, 2)
+  discountPercent   Decimal? @db.Decimal(5, 2) @default(0)
+  lineTotal         Decimal  @db.Decimal(12, 2)
+  batchNumber       String?  @db.VarChar(100)
+  expiryDate        DateTime?
+  mrp               Decimal? @db.Decimal(10, 2)
+  createdAt         DateTime @default(now())
+
+  order             B2BOrder           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  medicine          Medicine           @relation(fields: [medicineId], references: [id])
+  pharmacyInventory PharmacyInventory? @relation(fields: [pharmacyInventoryId], references: [id])
+  distributorMedicine DistributorMedicine? @relation(fields: [distributorMedicineId], references: [id])
+
+  @@map("b2b_order_items")
+  @@index([orderId])
+}
+
+model B2BOrderStatusHistory {
+  id          Int      @id @default(autoincrement())
+  orderId     Int
+  status      String   @db.VarChar(50)
+  changedBy   Int?
+  note        String?
+  createdAt   DateTime @default(now())
+
+  order       B2BOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("b2b_order_status_history")
+  @@index([orderId])
+}
+
+model PlatformSettings {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique @db.VarChar(100)
+  value       String?  @db.Text
+  type        String?  @db.VarChar(50) @default("string")
+  description String?  @db.Text
+  updatedBy   Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("platform_settings")
+}
+
+enum UserRole {
+  ADMIN
+  PHARMACY
+  DISTRIBUTOR
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum DocumentProfileType {
+  PHARMACY
+  DISTRIBUTOR
+}
+
+enum DocumentType {
+  LICENSE
+  GST
+  ADDRESS_PROOF
+  IDENTITY_PROOF
+  OTHER
+}
+
+enum MedicineStatus {
+  ACTIVE
+  INACTIVE
+  DRAFT
+}
+
+enum PurchaseStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  PARTIAL
+  FAILED
+  REFUNDED
+}
+
+enum OutOfStockStatus {
+  PENDING
+  FULFILLED
+  CANCELLED
+}
+
+enum B2BOrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  OPERATIONS
+  SUPPORT
+}

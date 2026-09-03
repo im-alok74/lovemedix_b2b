@@ -1,11 +1,11 @@
-import { redirect } from "next/navigation"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { getCurrentUser } from "@/lib/auth-server"
-import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
-import Link from "next/link"
-import { sql } from "@/lib/db"
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import { Header } from '@/components/header'
+import { Footer } from '@/components/footer'
+import { requirePharmacyProfile } from '@/lib/auth'
+import { sql } from '@/lib/db'
+import { Button } from '@/components/ui/button'
+import { Plus } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -13,40 +13,39 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
 
 export default async function PharmacyInventoryPage() {
-  const user = await getCurrentUser()
+  const { pharmacyId } = await requirePharmacyProfile()
 
-  if (!user || user.user_type !== "pharmacy") {
-    redirect("/signin")
-  }
-
-  const pharmacyProfile = await sql`
-    SELECT * FROM pharmacy_profiles
-    WHERE user_id = ${user.id}
-    LIMIT 1
+  const profile = await sql`
+    SELECT * FROM pharmacy_profiles WHERE user_id IN (SELECT user_id FROM pharmacy_profiles WHERE id = ${pharmacyId}) LIMIT 1
   `
-
-  if (pharmacyProfile.length === 0) {
-    redirect("/pharmacy/register")
+  if (!profile.length) {
+    redirect('/pharmacy/register')
   }
 
-  const pharmacyInventory = await sql`
+  const inventory = await sql`
     SELECT
       pi.id,
-      m.name as medicine_name,
+      m.name AS medicine_name,
       m.generic_name,
-      pi.stock_quantity,
-      pi.selling_price,
-      pi.discount_percentage,
+      m.manufacturer,
+      m.photo_url AS medicine_image,
       pi.batch_number,
+      pi.quantity,
+      pi.selling_price,
+      pi.discount_percent,
+      pi.mrp,
       pi.expiry_date,
-      pi.last_updated
+      pi.is_active,
+      pi.created_at,
+      pi.updated_at
     FROM pharmacy_inventory pi
-    JOIN medicines m ON pi.medicine_id = m.id
-    WHERE pi.pharmacy_id = ${(pharmacyProfile[0] as any).id}
-    ORDER BY pi.last_updated DESC
+    JOIN medicines m ON m.id = pi.medicine_id
+    WHERE pi.pharmacy_id = ${pharmacyId}
+    ORDER BY pi.updated_at DESC
   `
 
   return (
@@ -64,11 +63,11 @@ export default async function PharmacyInventoryPage() {
             </Button>
           </div>
 
-          {pharmacyInventory.length === 0 ? (
+          {inventory.length === 0 ? (
             <div className="rounded-lg border border-border bg-card p-12 text-center">
-              <p className="text-muted-foreground">No medicines in your inventory yet. Add some to get started!</p>
+              <p className="text-muted-foreground">No medicines in your inventory yet.</p>
               <Button asChild className="mt-4">
-                <Link href="/pharmacy/inventory/add">Add Medicine</Link>
+                <Link href="/pharmacy/medicines">Browse Catalog</Link>
               </Button>
             </div>
           ) : (
@@ -76,28 +75,43 @@ export default async function PharmacyInventoryPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Medicine Name</TableHead>
-                    <TableHead>Generic Name</TableHead>
+                    <TableHead>Medicine</TableHead>
+                    <TableHead>Batch</TableHead>
                     <TableHead>Stock</TableHead>
                     <TableHead>Selling Price</TableHead>
                     <TableHead>Discount</TableHead>
-                    <TableHead>Batch Number</TableHead>
-                    <TableHead>Expiry Date</TableHead>
+                    <TableHead>Expiry</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pharmacyInventory.map((item: any) => (
+                  {(inventory as any[]).map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.medicine_name}</TableCell>
-                      <TableCell>{item.generic_name || "-"}</TableCell>
-                      <TableCell>{Number(item.stock_quantity || 0)}</TableCell>
-                      <TableCell>₹{Number(item.selling_price || 0).toFixed(2)}</TableCell>
-                      <TableCell>{Number(item.discount_percentage || 0)}%</TableCell>
-                      <TableCell>{item.batch_number}</TableCell>
-                      <TableCell>{new Date(item.expiry_date).toLocaleDateString()}</TableCell>
+                      <TableCell className="font-medium">
+                        <div>
+                          <div>{item.medicine_name}</div>
+                          <div className="text-xs text-muted-foreground">{item.generic_name || item.manufacturer}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{item.batch_number || '-'}</TableCell>
                       <TableCell>
-                        <Link href={`/pharmacy/inventory/${item.id}/edit`} className="text-primary hover:underline">Edit</Link>
+                        <span className={Number(item.quantity) === 0 ? 'text-red-600 font-semibold' : ''}>
+                          {item.quantity}
+                        </span>
+                      </TableCell>
+                      <TableCell>₹{Number(item.selling_price).toFixed(2)}</TableCell>
+                      <TableCell>{Number(item.discount_percent || 0).toFixed(0)}%</TableCell>
+                      <TableCell>{item.expiry_date ? new Date(item.expiry_date).toLocaleDateString() : '-'}</TableCell>
+                      <TableCell>
+                        <Badge variant={item.is_active ? 'default' : 'secondary'}>
+                          {item.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button asChild size="sm" variant="outline">
+                          <Link href={`/pharmacy/inventory/${item.id}/edit`}>Edit</Link>
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}

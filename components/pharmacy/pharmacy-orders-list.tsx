@@ -1,27 +1,29 @@
-"use client"
+'use client'
 
-import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { useToast } from "@/hooks/use-toast"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useEffect, useState } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { useToast } from '@/hooks/use-toast'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import Link from 'next/link'
 
 interface Order {
   id: number
   order_number: string
-  customer_name: string
+  distributor_name: string
   order_status: string
   payment_status: string
   total_amount: string
   created_at: string
-  delivery_address: string
+  item_count: number
 }
 
 export function PharmacyOrdersList() {
   const [orders, setOrders] = useState<Order[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [filter, setFilter] = useState("all")
+  const [filter, setFilter] = useState('all')
   const { toast } = useToast()
 
   useEffect(() => {
@@ -29,80 +31,22 @@ export function PharmacyOrdersList() {
   }, [filter])
 
   const fetchOrders = async () => {
+    setIsLoading(true)
     try {
-      const response = await fetch(`/api/pharmacy/orders?filter=${filter}`, {
-        credentials: "include",
-        cache: "no-store",
-      })
-      const data = await response.json()
-
-      if (response.ok) {
-        setOrders(data.orders || [])
+      const url = filter === 'all'
+        ? '/api/pharmacy/orders?limit=10&page=1'
+        : `/api/pharmacy/orders?status=${filter}&limit=10&page=1`
+      const res = await fetch(url, { cache: 'no-store' })
+      const data = await res.json()
+      if (res.ok) {
+        setOrders(data.items || [])
       } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to load orders",
-          variant: "destructive",
-        })
+        toast({ title: 'Error', description: data.error || 'Failed to load orders', variant: 'destructive' })
       }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load orders",
-        variant: "destructive",
-      })
+    } catch {
+      toast({ title: 'Error', description: 'Something went wrong', variant: 'destructive' })
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const updateOrderStatus = async (orderId: number, newStatus: string) => {
-    try {
-      let response
-      if (newStatus === "confirmed") {
-        response = await fetch(`/api/pharmacy/orders/${orderId}/accept`, {
-          method: "POST",
-        })
-      } else {
-        response = await fetch(`/api/pharmacy/orders/${orderId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: newStatus }),
-        })
-      }
-
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: `Order status updated to ${newStatus}`,
-        })
-        fetchOrders()
-      } else {
-        const errorData = await response.json()
-        toast({
-          title: "Error",
-          description: errorData.error || "Failed to update order status",
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
-      console.error("Error updating order status:", error)
-      toast({
-        title: "Error",
-        description: "Something went wrong",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "delivered":
-        return "default"
-      case "cancelled":
-        return "destructive"
-      default:
-        return "secondary"
     }
   }
 
@@ -113,13 +57,13 @@ export function PharmacyOrdersList() {
   return (
     <Tabs value={filter} onValueChange={setFilter}>
       <TabsList>
-        <TabsTrigger value="all">All Orders</TabsTrigger>
-        <TabsTrigger value="pending">Pending</TabsTrigger>
-        <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
-        <TabsTrigger value="preparing">Preparing</TabsTrigger>
-        <TabsTrigger value="out_for_delivery">Out for Delivery</TabsTrigger>
-        <TabsTrigger value="delivered">Delivered</TabsTrigger>
-        <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+        <TabsTrigger value="all">All</TabsTrigger>
+        <TabsTrigger value="PENDING">Pending</TabsTrigger>
+        <TabsTrigger value="CONFIRMED">Confirmed</TabsTrigger>
+        <TabsTrigger value="PROCESSING">Processing</TabsTrigger>
+        <TabsTrigger value="SHIPPED">Shipped</TabsTrigger>
+        <TabsTrigger value="DELIVERED">Delivered</TabsTrigger>
+        <TabsTrigger value="CANCELLED">Cancelled</TabsTrigger>
       </TabsList>
 
       <TabsContent value={filter} className="mt-6">
@@ -130,80 +74,47 @@ export function PharmacyOrdersList() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {orders.map((order) => (
-              <Card key={order.id}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">Order #{order.order_number}</CardTitle>
-                      <p className="text-sm text-muted-foreground">Customer: {order.customer_name}</p>
-                    </div>
-                    <Badge variant={getStatusBadgeVariant(order.order_status)}>{order.order_status}</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Order Date</p>
-                        <p className="font-medium text-foreground">{new Date(order.created_at).toLocaleDateString()}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Payment</p>
-                        <p className="font-medium text-foreground capitalize">{order.payment_status || "pending"}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Total Amount</p>
-                        <p className="font-medium text-foreground">
-                          ₹{Number.parseFloat(order.total_amount).toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <p className="text-sm text-muted-foreground">Delivery Address</p>
-                      <p className="font-medium text-foreground">{order.delivery_address}</p>
-                    </div>
-
-                    {order.order_status === "pending" && (
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => updateOrderStatus(order.id, "confirmed")}>
-                          Accept Order
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => updateOrderStatus(order.id, "cancelled")}
-                        >
-                          Reject
-                        </Button>
-                      </div>
-                    )}
-
-                    {order.order_status === "confirmed" && (
-                      <Button size="sm" onClick={() => updateOrderStatus(order.id, "preparing")}>
-                        Mark as Preparing
+          <div className="rounded-lg border border-border bg-card">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order #</TableHead>
+                  <TableHead>Distributor</TableHead>
+                  <TableHead>Items</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Payment</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {orders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-medium">{order.order_number}</TableCell>
+                    <TableCell>{order.distributor_name}</TableCell>
+                    <TableCell>{order.item_count}</TableCell>
+                    <TableCell>₹{Number(order.total_amount).toFixed(2)}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{order.payment_status}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={order.order_status === 'DELIVERED' ? 'default' : order.order_status === 'CANCELLED' ? 'destructive' : 'secondary'}>
+                        {order.order_status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Button asChild size="sm" variant="outline">
+                        <Link href={`/pharmacy/orders/${order.id}`}>View</Link>
                       </Button>
-                    )}
-
-                    {order.order_status === "preparing" && (
-                      <Button size="sm" onClick={() => updateOrderStatus(order.id, "out_for_delivery")}>
-                        Mark as Out for Delivery
-                      </Button>
-                    )}
-
-                    {order.order_status !== "cancelled" && (
-                      <a href={`/api/orders/${order.order_number}/invoice`} target="_blank" rel="noopener noreferrer">
-                        <Button size="sm" variant="outline" className="mt-4">
-                          View Invoice
-                        </Button>
-                      </a>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         )}
       </TabsContent>

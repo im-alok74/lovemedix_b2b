@@ -1,212 +1,155 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
-import { getCurrentUser } from '@/lib/auth-server'
-import { checkSellerVerification, getSellerProfile } from '@/lib/seller-auth'
+import { requirePharmacyProfile } from '@/lib/auth'
 import { sql } from '@/lib/db'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { notFound } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
 
-async function updateMedicine(formData: FormData) {
-  'use server'
-
-  const user = await getCurrentUser()
-  if (!user || user.user_type !== 'pharmacy') {
-    redirect('/signin')
-  }
-
-  const verification = await checkSellerVerification(user.id, 'pharmacy')
-  if (!verification.verified) {
-    redirect('/pharmacy/medicines')
-  }
-
-  const profile = await getSellerProfile(user.id, 'pharmacy')
-  if (!profile) {
-    redirect('/pharmacy/register')
-  }
-
-  const inventoryId = Number(formData.get('inventory_id'))
-  const stockQuantity = Number(formData.get('stock_quantity'))
-  const sellingPrice = Number(formData.get('selling_price'))
-  const discountPercentage = Number(formData.get('discount_percentage')) || 0
-
-  try {
-    // Verify ownership
-    const inventory = await sql`
-      SELECT id FROM pharmacy_inventory
-      WHERE id = ${inventoryId} AND pharmacy_id = ${(profile as any).id}
-    `
-
-    if (inventory.length === 0) {
-      throw new Error('Medicine not found or unauthorized')
-    }
-
-    await sql`
-      UPDATE pharmacy_inventory
-      SET 
-        stock_quantity = ${stockQuantity},
-        selling_price = ${sellingPrice},
-        discount_percentage = ${discountPercentage},
-        last_updated = CURRENT_TIMESTAMP
-      WHERE id = ${inventoryId}
-    `
-
-    redirect('/pharmacy/medicines?updated=true')
-  } catch (error) {
-    console.error('[v0] Error updating medicine:', error)
-    throw error
-  }
-}
-
-export default async function EditMedicinePage({
+export default async function EditMedicineInInventoryPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
-  const user = await getCurrentUser()
+  const { pharmacyId } = await requirePharmacyProfile()
+  const id = Number((await params).id)
 
-  if (!user || user.user_type !== 'pharmacy') {
-    redirect('/signin')
-  }
-
-  const verification = await checkSellerVerification(user.id, 'pharmacy')
-  const profile = await getSellerProfile(user.id, 'pharmacy')
-
-  if (!profile || !verification.verified) {
+  if (Number.isNaN(id)) {
     redirect('/pharmacy/medicines')
   }
 
-  const { id } = await params
-  const inventoryId = Number(id)
-  if (Number.isNaN(inventoryId)) {
-    redirect('/pharmacy/medicines')
-  }
-
-  // Fetch medicine details
-  const inventoryResult = await sql`
-    SELECT 
-      pi.*,
-      m.name,
-      m.generic_name,
-      m.manufacturer,
-      m.category,
-      m.strength,
-      m.mrp
+  const itemRows = await sql`
+    SELECT
+      pi.id,
+      pi.medicine_id,
+      pi.batch_number,
+      pi.mfg_date,
+      pi.expiry_date,
+      pi.mrp,
+      pi.quantity,
+      pi.selling_price,
+      pi.discount_percent,
+      pi.is_active,
+      m.name AS medicine_name
     FROM pharmacy_inventory pi
-    JOIN medicines m ON pi.medicine_id = m.id
-    WHERE pi.id = ${inventoryId} AND pi.pharmacy_id = ${(profile as any).id}
+    JOIN medicines m ON m.id = pi.medicine_id
+    WHERE pi.id = ${id} AND pi.pharmacy_id = ${pharmacyId}
+    LIMIT 1
   `
 
-  if (inventoryResult.length === 0) {
-    redirect('/pharmacy/medicines')
+  if (!itemRows.length) {
+    notFound()
   }
 
-  const medicine = inventoryResult[0] as any
+  const item = itemRows[0] as any
 
   return (
-    <div className='flex min-h-screen flex-col'>
+    <div className="flex min-h-screen flex-col">
       <Header />
-      <main className='flex-1'>
-        <div className='container mx-auto px-4 py-8'>
-          <div className='mb-6 flex items-center gap-3'>
-            <Link href='/pharmacy/medicines'>
-              <Button variant='ghost' size='icon'>
-                <ArrowLeft className='h-4 w-4' />
+      <main className="flex-1">
+        <div className="container mx-auto px-4 py-8 max-w-2xl">
+          <Button asChild variant="ghost" className="mb-4">
+            <Link href="/pharmacy/inventory"><ArrowLeft className="h-4 w-4 mr-2" />Back to Inventory</Link>
+          </Button>
+          <h1 className="text-3xl font-bold text-foreground mb-6">Edit Inventory Item</h1>
+          <p className="text-muted-foreground mb-6">{item.medicine_name}</p>
+
+          <form
+            action={`/api/pharmacy/inventory/${id}`}
+            method="POST"
+            className="space-y-6 rounded-lg border border-border bg-card p-6"
+          >
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="batchNumber">Batch Number</Label>
+                <Input
+                  id="batchNumber"
+                  name="batchNumber"
+                  defaultValue={item.batch_number || ''}
+                  placeholder="Batch no."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mfgDate">Mfg Date</Label>
+                <Input
+                  id="mfgDate"
+                  name="mfgDate"
+                  type="date"
+                  defaultValue={item.mfg_date ? new Date(item.mfg_date).toISOString().split('T')[0] : ''}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="expiryDate">Expiry Date</Label>
+              <Input
+                id="expiryDate"
+                name="expiryDate"
+                type="date"
+                defaultValue={item.expiry_date ? new Date(item.expiry_date).toISOString().split('T')[0] : ''}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="mrp">MRP (₹)</Label>
+                <Input
+                  id="mrp"
+                  name="mrp"
+                  type="number"
+                  step="0.01"
+                  defaultValue={item.mrp}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quantity">Quantity</Label>
+                <Input
+                  id="quantity"
+                  name="quantity"
+                  type="number"
+                  defaultValue={item.quantity}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="sellingPrice">Selling Price (₹)</Label>
+                <Input
+                  id="sellingPrice"
+                  name="sellingPrice"
+                  type="number"
+                  step="0.01"
+                  defaultValue={item.selling_price}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="discountPercent">Discount %</Label>
+                <Input
+                  id="discountPercent"
+                  name="discountPercent"
+                  type="number"
+                  step="0.01"
+                  defaultValue={item.discount_percent || 0}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button type="submit">Save Changes</Button>
+              <Button asChild variant="outline">
+                <Link href="/pharmacy/inventory">Cancel</Link>
               </Button>
-            </Link>
-            <h1 className='text-3xl font-bold text-foreground'>Edit Medicine</h1>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{medicine.name}</CardTitle>
-              <p className='text-sm text-muted-foreground mt-2'>
-                {medicine.generic_name} • {medicine.category}
-              </p>
-            </CardHeader>
-            <CardContent>
-              <form action={updateMedicine} className='space-y-6'>
-                <input type='hidden' name='inventory_id' value={inventoryId} />
-
-                <div className='bg-muted/50 p-4 rounded-lg border border-muted'>
-                  <div className='grid md:grid-cols-2 gap-4 text-sm'>
-                    <div>
-                      <p className='text-muted-foreground'>Manufacturer</p>
-                      <p className='font-medium text-foreground'>{medicine.manufacturer}</p>
-                    </div>
-                    <div>
-                      <p className='text-muted-foreground'>Strength</p>
-                      <p className='font-medium text-foreground'>{medicine.strength}</p>
-                    </div>
-                    <div>
-                      <p className='text-muted-foreground'>MRP (Max Retail Price)</p>
-                      <p className='font-medium text-foreground'>₹{Number(medicine.mrp).toFixed(2)}</p>
-                    </div>
-                    <div>
-                      <p className='text-muted-foreground'>Batch Number</p>
-                      <p className='font-medium text-foreground'>{medicine.batch_number || '-'}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className='grid md:grid-cols-2 gap-4'>
-                  <div>
-                    <label htmlFor='stock_quantity' className='block text-sm font-medium mb-2'>
-                      Stock Quantity <span className='text-destructive'>*</span>
-                    </label>
-                    <Input
-                      type='number'
-                      id='stock_quantity'
-                      name='stock_quantity'
-                      required
-                      min='0'
-                      defaultValue={medicine.stock_quantity}
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor='selling_price' className='block text-sm font-medium mb-2'>
-                      Selling Price (₹) <span className='text-destructive'>*</span>
-                    </label>
-                    <Input
-                      type='number'
-                      id='selling_price'
-                      name='selling_price'
-                      required
-                      step='0.01'
-                      min='0'
-                      defaultValue={Number(medicine.selling_price).toFixed(2)}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor='discount_percentage' className='block text-sm font-medium mb-2'>
-                    Discount (%)
-                  </label>
-                  <Input
-                    type='number'
-                    id='discount_percentage'
-                    name='discount_percentage'
-                    step='0.01'
-                    min='0'
-                    max='100'
-                    defaultValue={Number(medicine.discount_percentage).toFixed(2)}
-                  />
-                </div>
-
-                <div className='flex gap-3'>
-                  <Button type='submit'>Update Medicine</Button>
-                  <Link href='/pharmacy/medicines'>
-                    <Button variant='outline'>Cancel</Button>
-                  </Link>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+            </div>
+          </form>
         </div>
       </main>
       <Footer />

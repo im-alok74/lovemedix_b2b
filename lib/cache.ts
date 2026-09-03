@@ -129,3 +129,11 @@ export function geoBucket(value: number | null | undefined): string {
   return value == null || !Number.isFinite(value) ? "" : value.toFixed(2)
 }
 
+export function cached<T>(
+  fn: () => Promise<T>,
+  key: string,
+  ttl: number,
+): () => Promise<T> {
+  return unstable_cache(fn, [key], { revalidate: ttl })
+}
+

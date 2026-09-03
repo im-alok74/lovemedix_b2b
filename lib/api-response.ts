@@ -1,69 +1,59 @@
-import { NextResponse } from "next/server"
-import { z } from "zod"
+import { NextResponse, type NextRequest } from 'next/server'
+import { z } from 'zod'
+import { AuthError } from '@/lib/auth'
 
-import { AuthError } from "./auth-server"
-
-/**
- * One error shape for every API route: `{ error: string, code?: string }`.
- *
- * Route handlers should end with `catch (error) { return handleApiError(error, scope) }`
- * so auth failures return 401/403 instead of being swallowed into a generic 500, and so
- * internal messages never leak to the client.
- */
-
-export function handleApiError(error: unknown, scope: string): NextResponse {
-  if (error instanceof AuthError) {
-    return NextResponse.json({ error: error.message, code: error.code }, { status: error.status })
-  }
-
-  if (error instanceof z.ZodError) {
-    return NextResponse.json(
-      {
-        error: error.issues[0]?.message ?? "Invalid input",
-        code: "VALIDATION_ERROR",
-        issues: error.issues,
-      },
-      { status: 400 },
-    )
-  }
-
-  // Postgres unique-violation surfaces as a duplicate-key message.
-  if (error instanceof Error && /duplicate key|unique constraint/i.test(error.message)) {
-    return NextResponse.json(
-      { error: "That record already exists", code: "DUPLICATE" },
-      { status: 409 },
-    )
-  }
-
-  // Log the real error server-side; return something safe to the client. Stack traces
-  // and SQL text must never reach the browser.
-  console.error(`[${scope}]`, error)
-
-  return NextResponse.json(
-    { error: "Something went wrong. Please try again.", code: "INTERNAL_ERROR" },
-    { status: 500 },
-  )
+export function ok<T>(data: T, status = 200) {
+  return NextResponse.json({ success: true, data }, { status })
 }
 
-export function ok<T>(data: T, init?: ResponseInit) {
-  return NextResponse.json(data, init)
+export function badRequest(error: string, code = 'BAD_REQUEST') {
+  return NextResponse.json({ success: false, error, code }, { status: 400 })
 }
 
-export function badRequest(message: string, code = "BAD_REQUEST") {
-  return NextResponse.json({ error: message, code }, { status: 400 })
+export function unauthorized(error = 'Unauthorized') {
+  return NextResponse.json({ success: false, error }, { status: 401 })
 }
 
-export function notFound(message = "Not found") {
-  return NextResponse.json({ error: message, code: "NOT_FOUND" }, { status: 404 })
+export function forbidden(error = 'Forbidden') {
+  return NextResponse.json({ success: false, error }, { status: 403 })
 }
 
-export function forbidden(message = "You do not have access to this resource") {
-  return NextResponse.json({ error: message, code: "FORBIDDEN" }, { status: 403 })
+export function notFound(error = 'Not found') {
+  return NextResponse.json({ success: false, error }, { status: 404 })
+}
+
+export function conflict(error: string) {
+  return NextResponse.json({ success: false, error }, { status: 409 })
 }
 
 export function tooManyRequests(retryAfter: number) {
   return NextResponse.json(
-    { error: "Too many requests. Please slow down.", code: "RATE_LIMITED" },
-    { status: 429, headers: { "Retry-After": String(retryAfter) } },
+    { success: false, error: 'Too many requests', retryAfter },
+    {
+      status: 429,
+      headers: { 'Retry-After': String(retryAfter) },
+    },
   )
+}
+
+export function serverError(error: string) {
+  return NextResponse.json({ success: false, error }, { status: 500 })
+}
+
+export function handleApiError(error: unknown, context = ''): NextResponse {
+  console.error(`[${context}]`, error)
+
+  if (error instanceof AuthError) {
+    if (error.code === 'INVALID_CREDENTIALS') return unauthorized(error.message)
+    if (error.code === 'ACCOUNT_LOCKED') return NextResponse.json({ success: false, error: error.message }, { status: 423 })
+    if (error.code === 'EMAIL_TAKEN') return conflict(error.message)
+    if (error.code === 'UNAUTHORIZED') return unauthorized(error.message)
+    if (error.code === 'FORBIDDEN') return forbidden(error.message)
+  }
+
+  if (error instanceof z.ZodError) {
+    return badRequest(error.issues[0]?.message ?? 'Invalid input', 'VALIDATION_ERROR')
+  }
+
+  return serverError('Internal server error')
 }

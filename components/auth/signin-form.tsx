@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -9,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
+import { Loader2 } from "lucide-react"
 
 export function SignInForm() {
   const [email, setEmail] = useState("")
@@ -21,8 +21,6 @@ export function SignInForm() {
     e.preventDefault()
     setIsLoading(true)
 
-    console.log("Form: Submitting sign in form")
-
     try {
       const response = await fetch("/api/auth/signin", {
         method: "POST",
@@ -30,37 +28,19 @@ export function SignInForm() {
         body: JSON.stringify({ email, password }),
       })
 
-      console.log("Form: Response status:", response.status)
       const data = await response.json()
-      console.log("Form: Response data:", data)
 
       if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Signed in successfully!",
-        })
-
-        console.log("Form: Redirecting to homepage")
+        toast({ title: "Success", description: "Signed in successfully!" })
         router.push("/")
         router.refresh()
       } else {
-        console.log("Form: Sign in failed:", data.error)
-        toast({
-          title: "Error",
-          description: data.error || "Invalid credentials",
-          variant: "destructive",
-        })
+        toast({ title: "Error", description: data.error || "Invalid credentials", variant: "destructive" })
       }
-    } catch (error) {
-      console.error("Form: Sign in error:", error)
-      toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive",
-      })
+    } catch {
+      toast({ title: "Error", description: "Something went wrong", variant: "destructive" })
     } finally {
       setIsLoading(false)
-      console.log("Form: Sign in process completed")
     }
   }
 
@@ -68,38 +48,16 @@ export function SignInForm() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+        <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
       </div>
-
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
-        <Input
-          id="password"
-          type="password"
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
       </div>
-
       <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? "Signing in..." : "Sign In"}
+        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        Sign In
       </Button>
-
-      <p className="text-center text-sm text-muted-foreground">
-        Don't have an account?{" "}
-        <Link href="/signup" className="text-primary hover:underline">
-          Sign up
-        </Link>
-      </p>
     </form>
   )
 }
