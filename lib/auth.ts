@@ -286,14 +286,34 @@ export function roleHome(role: UserRole) {
  * the dashboard, a "finish registration" prompt, or an approval-status screen.
  * Layouts call this so individual pages never render for an unapproved account.
  */
+/** Request-cached: the current user's pharmacy id + status, or null. */
+export const getPharmacyContext = cache(async () => {
+  const user = await getCurrentUser()
+  if (!user || user.role !== 'PHARMACY') return null
+  const profile = await prisma.pharmacyProfile.findUnique({
+    where: { userId: user.id },
+    select: { id: true, verificationStatus: true, rejectionReason: true },
+  })
+  return profile ? { user, ...profile } : { user, id: null as number | null, verificationStatus: null, rejectionReason: null }
+})
+
+/** Request-cached: the current user's distributor id + status, or null. */
+export const getDistributorContext = cache(async () => {
+  const user = await getCurrentUser()
+  if (!user || user.role !== 'DISTRIBUTOR') return null
+  const profile = await prisma.distributorProfile.findUnique({
+    where: { userId: user.id },
+    select: { id: true, verificationStatus: true, rejectionReason: true },
+  })
+  return profile ? { user, ...profile } : { user, id: null as number | null, verificationStatus: null, rejectionReason: null }
+})
+
 export async function resolveDashboardGate(role: 'PHARMACY' | 'DISTRIBUTOR'): Promise<DashboardGate> {
   const user = await getCurrentUser()
   if (!user) return { state: 'unauthenticated' }
   if (user.role !== role) return { state: 'wrong-role', home: ROLE_HOME[user.role] }
-  const profile =
-    role === 'PHARMACY'
-      ? await prisma.pharmacyProfile.findUnique({ where: { userId: user.id } })
-      : await prisma.distributorProfile.findUnique({ where: { userId: user.id } })
+  const ctx = role === 'PHARMACY' ? await getPharmacyContext() : await getDistributorContext()
+  const profile = ctx && ctx.id != null ? { id: ctx.id, verificationStatus: ctx.verificationStatus!, rejectionReason: ctx.rejectionReason } : null
 
   if (!profile) return { state: 'no-profile', user }
   if (profile.verificationStatus === 'VERIFIED') return { state: 'ok', profileId: profile.id, user }
