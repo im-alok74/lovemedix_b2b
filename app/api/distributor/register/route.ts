@@ -1,52 +1,62 @@
+import type { NextRequest } from 'next/server'
+
 import prisma from '@/lib/prisma'
-import { NextResponse } from 'next/server'
 import { signUp } from '@/lib/auth'
-import { safeParse, distributorRegisterSchema } from '@/lib/validation'
-import { badRequest, ok, conflict } from '@/lib/api-response'
+import { badRequest, conflict, handleApiError, ok, tooManyRequests } from '@/lib/api-response'
+import { clientKey, rateLimit } from '@/lib/rate-limit'
+import { distributorRegisterSchema, safeParse } from '@/lib/validation'
 
-export async function POST(request: Request) {
+function optionalDate(value?: string | null) {
+  if (!value) return null
+  const d = new Date(value)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const parsed = safeParse(distributorRegisterSchema, body)
+    const limit = rateLimit(clientKey(request, 'distributor-register'), 5, 60 * 60 * 1000)
+    if (!limit.allowed) return tooManyRequests(limit.retryAfter)
 
-    if (!parsed.ok) {
-      return badRequest(parsed.error, 'VALIDATION_ERROR')
-    }
+    const parsed = safeParse(distributorRegisterSchema, await request.json())
+    if (!parsed.ok) return badRequest(parsed.error, 'VALIDATION_ERROR')
+    const d = parsed.data
 
-    const data = parsed.data
-
-    const existingUser = await prisma.user.findUnique({
-      where: { email: data.email },
-    })
-
-    if (existingUser) {
+    if (await prisma.user.findUnique({ where: { email: d.email } })) {
       return conflict('An account with this email already exists')
     }
 
-    const user = await signUp(data.email, data.password, data.fullName, data.phone, 'DISTRIBUTOR')
+    const user = await signUp(d.email, d.password, d.fullName, d.phone, 'DISTRIBUTOR', {
+      userAgent: request.headers.get('user-agent'),
+      ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
+    })
 
-    await prisma.distributorProfile.create({
+    const profile = await prisma.distributorProfile.create({
       data: {
         userId: user.id,
-        companyName: data.companyName,
-        businessLicense: data.businessLicense,
-        taxId: data.taxId,
-        addressLine1: data.addressLine1,
-        addressLine2: data.addressLine2 || null,
-        city: data.city,
-        state: data.state,
-        pincode: data.pincode,
-        serviceRadiusKm: data.serviceRadiusKm,
+        companyName: d.companyName,
+        businessLicense: d.businessLicense || null,
+        drugLicenseNumber: d.drugLicenseNumber || null,
+        licenseExpiry: optionalDate(d.licenseExpiry),
+        gstNumber: d.gstNumber || null,
+        contactPerson: d.contactPerson || null,
+        phone: d.phone,
+        email: d.email,
+        addressLine1: d.addressLine1,
+        addressLine2: d.addressLine2 || null,
+        city: d.city,
+        state: d.state,
+        pincode: d.pincode,
+        minOrderValue: d.minOrderValue ?? 0,
         verificationStatus: 'PENDING',
       },
     })
 
-    return ok({ success: true, user }, 201)
+    await prisma.auditLog.create({
+      data: { actorId: user.id, action: 'distributor.register', entityType: 'DistributorProfile', entityId: String(profile.id) },
+    })
+
+    return ok({ user, profileId: profile.id, verificationStatus: 'PENDING' }, 201)
   } catch (error) {
-    console.error('[distributor/register] Error:', error)
-    return NextResponse.json(
-      { success: false, error: 'Failed to register distributor' },
-      { status: 500 },
-    )
+    return handleApiError(error, 'distributor/register')
   }
 }

@@ -1,3 +1,5 @@
+import type { NextRequest } from 'next/server'
+
 type RateLimitEntry = { count: number; resetAt: number }
 
 const store = new Map<string, RateLimitEntry>()

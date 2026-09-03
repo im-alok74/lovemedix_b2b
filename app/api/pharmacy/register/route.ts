@@ -1,56 +1,61 @@
-import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+
+import prisma from '@/lib/prisma'
 import { signUp } from '@/lib/auth'
-import { safeParse, pharmacyRegisterSchema } from '@/lib/validation'
-import { badRequest, ok, conflict } from '@/lib/api-response'
+import { badRequest, conflict, handleApiError, ok, tooManyRequests } from '@/lib/api-response'
+import { clientKey, rateLimit } from '@/lib/rate-limit'
+import { pharmacyRegisterSchema, safeParse } from '@/lib/validation'
 
-export async function POST(request: Request) {
+function optionalDate(value?: string | null) {
+  if (!value) return null
+  const d = new Date(value)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const parsed = safeParse(pharmacyRegisterSchema, body)
+    const limit = rateLimit(clientKey(request, 'pharmacy-register'), 5, 60 * 60 * 1000)
+    if (!limit.allowed) return tooManyRequests(limit.retryAfter)
 
-    if (!parsed.ok) {
-      return badRequest(parsed.error, 'VALIDATION_ERROR')
-    }
+    const parsed = safeParse(pharmacyRegisterSchema, await request.json())
+    if (!parsed.ok) return badRequest(parsed.error, 'VALIDATION_ERROR')
+    const d = parsed.data
 
-    const data = parsed.data
-
-    const existingUser = await prisma.user.findUnique({
-      where: { email: data.email },
-    })
-
-    if (existingUser) {
+    if (await prisma.user.findUnique({ where: { email: d.email } })) {
       return conflict('An account with this email already exists')
     }
 
-    const user = await signUp(data.email, data.password, data.fullName, data.phone, 'PHARMACY')
+    const user = await signUp(d.email, d.password, d.fullName, d.phone, 'PHARMACY', {
+      userAgent: request.headers.get('user-agent'),
+      ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
+    })
 
-    await prisma.pharmacyProfile.create({
+    const profile = await prisma.pharmacyProfile.create({
       data: {
         userId: user.id,
-        pharmacyName: data.pharmacyName,
-        registrationNumber: data.registrationNumber,
-        gstNumber: data.gstNumber,
-        contactPerson: data.contactPerson,
-        phone: data.phone,
-        email: data.email,
-        addressLine1: data.addressLine1,
-        addressLine2: data.addressLine2 || null,
-        city: data.city,
-        state: data.state,
-        pincode: data.pincode,
-        licenseNumber: data.licenseNumber,
+        pharmacyName: d.pharmacyName,
+        registrationNumber: d.registrationNumber || null,
+        gstNumber: d.gstNumber || null,
+        drugLicenseNumber: d.drugLicenseNumber || null,
+        licenseExpiry: optionalDate(d.licenseExpiry),
+        contactPerson: d.contactPerson || null,
+        phone: d.phone,
+        email: d.email,
+        addressLine1: d.addressLine1,
+        addressLine2: d.addressLine2 || null,
+        city: d.city,
+        state: d.state,
+        pincode: d.pincode,
         verificationStatus: 'PENDING',
       },
     })
 
-    return ok({ success: true, user }, 201)
+    await prisma.auditLog.create({
+      data: { actorId: user.id, action: 'pharmacy.register', entityType: 'PharmacyProfile', entityId: String(profile.id) },
+    })
+
+    return ok({ user, profileId: profile.id, verificationStatus: 'PENDING' }, 201)
   } catch (error) {
-    console.error('[pharmacy/register] Error:', error)
-    return NextResponse.json(
-      { success: false, error: 'Failed to register pharmacy' },
-      { status: 500 },
-    )
+    return handleApiError(error, 'pharmacy/register')
   }
 }
-
-import prisma from '@/lib/prisma'

@@ -1,84 +1,44 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { SESSION_COOKIE, getSessionFromToken, type EdgeSession } from '@/lib/auth-edge'
 
-type Role = EdgeSession['userType']
+/**
+ * Edge middleware does a cheap first pass only: is there a session cookie at all on a
+ * protected path? Role and approval checks need the database and run in the route-group
+ * layouts (`app/(admin|pharmacy|distributor)/layout.tsx`) and API handlers, which have
+ * Prisma. This keeps the edge fast and the authorization logic in one place per role.
+ */
 
-const ROLE_RULES: Array<{ prefix: string; roles: Role[] }> = [
-  { prefix: '/admin', roles: ['ADMIN'] },
-  { prefix: '/api/admin', roles: ['ADMIN'] },
-  { prefix: '/pharmacy', roles: ['PHARMACY', 'ADMIN'] },
-  { prefix: '/api/pharmacy', roles: ['PHARMACY', 'ADMIN'] },
-  { prefix: '/distributor', roles: ['DISTRIBUTOR', 'ADMIN'] },
-  { prefix: '/api/distributor', roles: ['DISTRIBUTOR', 'ADMIN'] },
-]
+const SESSION_COOKIE = 'session_token'
 
-const AUTHENTICATED_PREFIXES = [
-  '/dashboard',
-  '/orders',
-  '/api/orders',
-  '/profile',
-  '/api/procurement',
-]
+const PROTECTED_PREFIXES = ['/admin', '/pharmacy', '/distributor', '/api/admin', '/api/pharmacy', '/api/distributor']
 
+// Reachable without a session even though they sit under a protected prefix.
 const PUBLIC_EXCEPTIONS = [
   '/pharmacy/register',
   '/distributor/register',
-  '/api/distributor/register',
   '/api/pharmacy/register',
+  '/api/distributor/register',
 ]
 
-const ROLE_HOME: Record<Role, string> = {
-  ADMIN: '/admin',
-  PHARMACY: '/pharmacy/dashboard',
-  DISTRIBUTOR: '/distributor/dashboard',
-}
-
-function isApi(pathname: string) {
-  return pathname.startsWith('/api/')
-}
-
-function matchPrefix(pathname: string, prefix: string) {
+function matches(pathname: string, prefix: string) {
   return pathname === prefix || pathname.startsWith(`${prefix}/`)
 }
 
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
+export function middleware(request: NextRequest) {
+  const { pathname, search } = request.nextUrl
 
-  if (matchPrefix(pathname, '/create-admin') && process.env.NODE_ENV === 'production') {
-    return NextResponse.rewrite(new URL('/404', request.url))
+  if (PUBLIC_EXCEPTIONS.some((p) => matches(pathname, p))) return NextResponse.next()
+  if (!PROTECTED_PREFIXES.some((p) => matches(pathname, p))) return NextResponse.next()
+
+  const hasSession = Boolean(request.cookies.get(SESSION_COOKIE)?.value)
+  if (hasSession) return NextResponse.next()
+
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
   }
-
-  if (PUBLIC_EXCEPTIONS.some((p) => matchPrefix(pathname, p))) {
-    return NextResponse.next()
-  }
-
-  const roleRule = ROLE_RULES.find((rule) => matchPrefix(pathname, rule.prefix))
-  const needsAuthOnly = AUTHENTICATED_PREFIXES.some((p) => matchPrefix(pathname, p))
-
-  if (!roleRule && !needsAuthOnly) {
-    return NextResponse.next()
-  }
-
-  const session = await getSessionFromToken(request.cookies.get(SESSION_COOKIE)?.value)
-
-  if (!session) {
-    if (isApi(pathname)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    const signInUrl = new URL('/signin', request.url)
-    signInUrl.searchParams.set('redirect', pathname + request.nextUrl.search)
-    return NextResponse.redirect(signInUrl)
-  }
-
-  if (roleRule && !roleRule.roles.includes(session.userType)) {
-    if (isApi(pathname)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-    return NextResponse.redirect(new URL(ROLE_HOME[session.userType] ?? '/', request.url))
-  }
-
-  return NextResponse.next()
+  const signInUrl = new URL('/signin', request.url)
+  signInUrl.searchParams.set('redirect', pathname + search)
+  return NextResponse.redirect(signInUrl)
 }
 
 export const config = {

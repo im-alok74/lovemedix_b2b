@@ -224,24 +224,81 @@ export async function requireRole(allowedRoles: UserRole[]) {
   return user
 }
 
+// --- Pharmacy / distributor profile gating -------------------------------------
+
 export async function requirePharmacyProfile() {
   const user = await requireRole(['PHARMACY'])
-  const profile = await prisma.pharmacyProfile.findUnique({
-    where: { userId: user.id },
-  })
+  const profile = await prisma.pharmacyProfile.findUnique({ where: { userId: user.id } })
   if (!profile) {
     throw new AuthError('Complete your pharmacy registration first', 'FORBIDDEN', 403)
   }
-  return { user, pharmacyId: profile.id }
+  return { user, pharmacyId: profile.id, verificationStatus: profile.verificationStatus }
 }
 
 export async function requireDistributorProfile() {
   const user = await requireRole(['DISTRIBUTOR'])
-  const profile = await prisma.distributorProfile.findUnique({
-    where: { userId: user.id },
-  })
+  const profile = await prisma.distributorProfile.findUnique({ where: { userId: user.id } })
   if (!profile) {
     throw new AuthError('Complete your distributor registration first', 'FORBIDDEN', 403)
   }
-  return { user, distributorId: profile.id }
+  return { user, distributorId: profile.id, verificationStatus: profile.verificationStatus }
+}
+
+/** Pharmacy that has been approved by an admin. Use in every pharmacy write path. */
+export async function requireApprovedPharmacy() {
+  const ctx = await requirePharmacyProfile()
+  if (ctx.verificationStatus !== 'VERIFIED') {
+    throw new AuthError('Your pharmacy account is awaiting admin approval', 'FORBIDDEN', 403)
+  }
+  return { user: ctx.user, pharmacyId: ctx.pharmacyId }
+}
+
+/** Distributor that has been approved by an admin. Use in every distributor write path. */
+export async function requireApprovedDistributor() {
+  const ctx = await requireDistributorProfile()
+  if (ctx.verificationStatus !== 'VERIFIED') {
+    throw new AuthError('Your distributor account is awaiting admin approval', 'FORBIDDEN', 403)
+  }
+  return { user: ctx.user, distributorId: ctx.distributorId }
+}
+
+export type DashboardGate =
+  | { state: 'unauthenticated' }
+  | { state: 'wrong-role'; home: string }
+  | { state: 'ok'; profileId: number; user: SessionUser }
+  | { state: 'no-profile'; user: SessionUser }
+  | { state: 'pending' | 'rejected'; rejectionReason: string | null; user: SessionUser }
+
+export type SessionUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>
+
+const ROLE_HOME: Record<UserRole, string> = {
+  ADMIN: '/admin',
+  PHARMACY: '/pharmacy/dashboard',
+  DISTRIBUTOR: '/distributor/dashboard',
+}
+
+export function roleHome(role: UserRole) {
+  return ROLE_HOME[role]
+}
+
+/**
+ * Resolves what a pharmacy/distributor should see at the root of their console:
+ * the dashboard, a "finish registration" prompt, or an approval-status screen.
+ * Layouts call this so individual pages never render for an unapproved account.
+ */
+export async function resolveDashboardGate(role: 'PHARMACY' | 'DISTRIBUTOR'): Promise<DashboardGate> {
+  const user = await getCurrentUser()
+  if (!user) return { state: 'unauthenticated' }
+  if (user.role !== role) return { state: 'wrong-role', home: ROLE_HOME[user.role] }
+  const profile =
+    role === 'PHARMACY'
+      ? await prisma.pharmacyProfile.findUnique({ where: { userId: user.id } })
+      : await prisma.distributorProfile.findUnique({ where: { userId: user.id } })
+
+  if (!profile) return { state: 'no-profile', user }
+  if (profile.verificationStatus === 'VERIFIED') return { state: 'ok', profileId: profile.id, user }
+  if (profile.verificationStatus === 'REJECTED') {
+    return { state: 'rejected', rejectionReason: profile.rejectionReason, user }
+  }
+  return { state: 'pending', rejectionReason: null, user }
 }

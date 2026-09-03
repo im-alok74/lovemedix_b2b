@@ -59,27 +59,50 @@ export const pharmacyRegisterSchema = z.object({
   city: z.string().trim().min(2).max(100),
   state: z.string().trim().min(2).max(100),
   pincode: z.string().trim().regex(/^[1-9]\d{5}$/, 'Enter a valid 6-digit pincode'),
-  licenseNumber: z.string().trim().max(100).optional().nullable(),
+  drugLicenseNumber: z.string().trim().max(100).optional().nullable().or(z.literal('')),
+  licenseExpiry: z.string().trim().optional().nullable().or(z.literal('')),
 })
 
-export const distributorRegisterSchema = z.object({
-  email: emailSchema,
-  password: passwordSchema,
-  confirmPassword: z.string(),
-  fullName: z.string().trim().min(2).max(150),
-  phone: phoneSchema,
-  companyName: z.string().trim().min(2).max(255),
-  businessLicense: z.string().trim().max(100),
-  taxId: z.string().trim().max(50),
-  addressLine1: z.string().trim().min(5).max(255),
-  addressLine2: z.string().trim().max(255).optional().nullable().or(z.literal('')),
-  city: z.string().trim().min(2).max(100),
-  state: z.string().trim().min(2).max(100),
-  pincode: z.string().trim().regex(/^[1-9]\d{5}$/, 'Enter a valid 6-digit pincode'),
-  serviceRadiusKm: z.coerce.number().int().positive().max(5000).optional().default(50),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Passwords do not match',
-  path: ['confirmPassword'],
+export const distributorRegisterSchema = z
+  .object({
+    email: emailSchema,
+    password: passwordSchema,
+    confirmPassword: z.string().optional(),
+    fullName: z.string().trim().min(2).max(150),
+    phone: phoneSchema,
+    companyName: z.string().trim().min(2).max(255),
+    businessLicense: z.string().trim().max(100).optional().nullable().or(z.literal('')),
+    drugLicenseNumber: z.string().trim().max(100).optional().nullable().or(z.literal('')),
+    licenseExpiry: z.string().trim().optional().nullable().or(z.literal('')),
+    gstNumber: gstSchema.optional().nullable().or(z.literal('')),
+    contactPerson: z.string().trim().max(150).optional().nullable().or(z.literal('')),
+    addressLine1: z.string().trim().min(5).max(255),
+    addressLine2: z.string().trim().max(255).optional().nullable().or(z.literal('')),
+    city: z.string().trim().min(2).max(100),
+    state: z.string().trim().min(2).max(100),
+    pincode: z.string().trim().regex(/^[1-9]\d{5}$/, 'Enter a valid 6-digit pincode'),
+    minOrderValue: z.coerce.number().min(0).max(10_000_000).optional().default(0),
+  })
+  .refine((data) => !data.confirmPassword || data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  })
+
+/** Documents attached to a pharmacy/distributor profile during or after registration. */
+export const documentUploadSchema = z.object({
+  documentType: z.enum([
+    'DRUG_LICENSE',
+    'GST_CERTIFICATE',
+    'BUSINESS_REGISTRATION',
+    'ADDRESS_PROOF',
+    'IDENTITY_PROOF',
+    'OTHER',
+  ]),
+  fileName: z.string().trim().min(1).max(255),
+  fileUrl: z.string().trim().url().max(500),
+  fileSize: z.coerce.number().int().positive().optional().nullable(),
+  mimeType: z.string().trim().max(100).optional().nullable(),
+  expiresAt: z.string().trim().optional().nullable().or(z.literal('')),
 })
 
 export function firstIssue(error: z.ZodError): string {
