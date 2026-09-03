@@ -1,94 +1,64 @@
-import { Suspense } from 'react'
-import { getCurrentUser } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { Store, Truck, ArrowRight } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { PharmacyRegisterForm } from '@/components/auth/pharmacy-register-form'
-import { DistributorRegisterForm } from '@/components/auth/distributor-register-form'
-import { SignInForm } from '@/components/auth/signin-form'
-import { Store, Building2 } from 'lucide-react'
+import { getCurrentUser, roleHome } from '@/lib/auth'
+import { AuthShell } from '@/components/auth/auth-shell'
 
-export const metadata = {
-  title: 'Get Started | Lovemedix',
-}
+export const metadata = { title: 'Get started' }
+
+const OPTIONS = [
+  {
+    href: '/pharmacy/register',
+    icon: Store,
+    title: 'I run a pharmacy',
+    body: 'Buy medicines in bulk from verified distributors, raise requests, and manage your shop, inventory and customer billing.',
+  },
+  {
+    href: '/distributor/register',
+    icon: Truck,
+    title: 'I am a distributor',
+    body: 'List your stock with live pricing, batch and expiry, and fulfil purchase orders from approved pharmacies.',
+  },
+]
 
 export default async function GetStartedPage() {
   const user = await getCurrentUser()
-
-  if (user) {
-    const home = user.role === 'ADMIN' ? '/admin' : user.role === 'PHARMACY' ? '/pharmacy/dashboard' : '/distributor/dashboard'
-    redirect(home)
-  }
+  if (user) redirect(roleHome(user.role))
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <main className="flex-1 bg-muted/30 py-12">
-        <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-2xl">
-            <div className="text-center">
-              <h1 className="text-3xl font-bold tracking-tight">Get Started</h1>
-              <p className="mt-2 text-muted-foreground">
-                Create an account or sign in to access the B2B procurement platform.
-              </p>
-            </div>
-
-            <Tabs defaultValue="signin" className="mt-8">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="pharmacy">Pharmacy</TabsTrigger>
-                <TabsTrigger value="distributor">Distributor</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="signin">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Sign In</CardTitle>
-                    <CardDescription>Enter your credentials to access your account</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Suspense fallback={<div className="space-y-4">Loading...</div>}>
-                      <SignInForm />
-                    </Suspense>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="pharmacy">
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <Store className="h-5 w-5 text-primary" />
-                      <CardTitle>Register as Pharmacy</CardTitle>
-                    </div>
-                    <CardDescription>List your pharmacy and start procuring medicines</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <PharmacyRegisterForm />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="distributor">
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-5 w-5 text-primary" />
-                      <CardTitle>Register as Distributor</CardTitle>
-                    </div>
-                    <CardDescription>Supply medicines to pharmacies across the network</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <DistributorRegisterForm />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
-      </main>
-    </div>
+    <AuthShell
+      title="Get started with Lovemedix"
+      subtitle="Choose how you want to join the marketplace."
+      footer={
+        <>
+          Already have an account?{' '}
+          <Link href="/signin" className="font-medium text-primary hover:underline">
+            Sign in
+          </Link>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        {OPTIONS.map((o) => (
+          <Link
+            key={o.href}
+            href={o.href}
+            className="group flex items-start gap-4 rounded-xl border border-border p-4 transition-colors hover:border-primary/50 hover:bg-primary/[0.03]"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <o.icon className="h-5 w-5" />
+            </span>
+            <span className="flex-1">
+              <span className="flex items-center justify-between">
+                <span className="font-semibold">{o.title}</span>
+                <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+              </span>
+              <span className="mt-1 block text-sm text-muted-foreground">{o.body}</span>
+            </span>
+          </Link>
+        ))}
+      </div>
+    </AuthShell>
   )
 }

@@ -1,44 +1,49 @@
-"use client"
+'use client'
 
-import type React from "react"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useToast } from "@/hooks/use-toast"
-import { Loader2 } from "lucide-react"
+import type React from 'react'
+import { useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Loader2 } from 'lucide-react'
+
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useToast } from '@/hooks/use-toast'
+
+const HOME: Record<string, string> = {
+  ADMIN: '/admin',
+  PHARMACY: '/pharmacy/dashboard',
+  DISTRIBUTOR: '/distributor/dashboard',
+}
 
 export function SignInForm() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const params = useSearchParams()
   const { toast } = useToast()
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setIsLoading(true)
-
     try {
-      const response = await fetch("/api/auth/signin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        toast({ title: "Success", description: "Signed in successfully!" })
-        router.push("/")
-        router.refresh()
-      } else {
-        toast({ title: "Error", description: data.error || "Invalid credentials", variant: "destructive" })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || data?.success === false) {
+        toast({ title: 'Could not sign in', description: data?.error ?? 'Invalid credentials', variant: 'destructive' })
+        return
       }
+      const role = data?.data?.user?.role as string | undefined
+      const redirect = params.get('redirect')
+      router.push(redirect || HOME[role ?? ''] || '/')
+      router.refresh()
     } catch {
-      toast({ title: "Error", description: "Something went wrong", variant: "destructive" })
+      toast({ title: 'Network error', description: 'Please try again.', variant: 'destructive' })
     } finally {
       setIsLoading(false)
     }
@@ -46,17 +51,17 @@ export function SignInForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+      <div className="space-y-1.5">
+        <Label htmlFor="email">Work email</Label>
+        <Input id="email" type="email" autoComplete="email" placeholder="you@pharmacy.in" value={email} onChange={(e) => setEmail(e.target.value)} required />
       </div>
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Label htmlFor="password">Password</Label>
-        <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        <Input id="password" type="password" autoComplete="current-password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
       </div>
       <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Sign In
+        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+        Sign in
       </Button>
     </form>
   )

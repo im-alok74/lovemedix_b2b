@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+import { ClipboardList, FileText, Boxes, AlertTriangle, ReceiptText } from 'lucide-react'
+
 import prisma from '@/lib/prisma'
 import { getPharmacyContext } from '@/lib/auth'
 import { PageHeading, StatCard, Card, EmptyState, StatusBadge } from '@/components/dashboard/ui'
@@ -31,13 +33,13 @@ export default async function PharmacyDashboard() {
 
   return (
     <div>
-      <PageHeading title="Pharmacy overview" />
+      <PageHeading title="Pharmacy overview" description="Procurement, requests and shop activity at a glance." />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="Open purchase orders" value={openOrders} href="/pharmacy/purchase-orders" />
-        <StatCard label="Open requests" value={openRequests} href="/pharmacy/requests" />
-        <StatCard label="Low stock" value={lowStock} href="/pharmacy/inventory" />
-        <StatCard label="Expiring ≤30 days" value={expiring} href="/pharmacy/inventory" />
-        <StatCard label="Sales today" value={formatINR(salesToday._sum.totalAmount ?? 0)} hint={`${salesToday._count} bills`} href="/pharmacy/sales" />
+        <StatCard label="Open purchase orders" value={openOrders} href="/pharmacy/purchase-orders" icon={ClipboardList} tone="primary" />
+        <StatCard label="Open requests" value={openRequests} href="/pharmacy/requests" icon={FileText} />
+        <StatCard label="Low stock" value={lowStock} href="/pharmacy/inventory" icon={Boxes} tone={lowStock > 0 ? 'warning' : 'default'} />
+        <StatCard label="Expiring ≤30 days" value={expiring} href="/pharmacy/inventory" icon={AlertTriangle} tone={expiring > 0 ? 'danger' : 'default'} />
+        <StatCard label="Sales today" value={formatINR(salesToday._sum.totalAmount ?? 0)} hint={`${salesToday._count} bills`} href="/pharmacy/sales" icon={ReceiptText} />
       </div>
 
       <Card className="mt-6 p-4">

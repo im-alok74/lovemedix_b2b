@@ -23,26 +23,45 @@ export function PageHeading({
   )
 }
 
+import type { LucideIcon } from 'lucide-react'
+
 export function StatCard({
   label,
   value,
   hint,
   href,
+  icon: Icon,
+  tone = 'default',
 }: {
   label: string
   value: React.ReactNode
   hint?: string
   href?: string
+  icon?: LucideIcon
+  tone?: 'default' | 'primary' | 'warning' | 'danger'
 }) {
+  const toneRing = {
+    default: 'bg-muted text-muted-foreground',
+    primary: 'bg-primary/10 text-primary',
+    warning: 'bg-amber-100 text-amber-700',
+    danger: 'bg-red-100 text-red-700',
+  }[tone]
   const body = (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-2 text-2xl font-semibold tabular-nums">{value}</p>
-      {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
+    <div className="group flex items-start justify-between rounded-xl border border-border bg-card p-4 transition-colors">
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+        <p className="mt-2 text-2xl font-semibold tabular-nums">{value}</p>
+        {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
+      </div>
+      {Icon ? (
+        <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', toneRing)}>
+          <Icon className="h-4 w-4" />
+        </span>
+      ) : null}
     </div>
   )
   return href ? (
-    <Link href={href} className="block transition-colors hover:border-primary/50">
+    <Link href={href} className="block rounded-xl transition-colors hover:border-primary/50 [&>div]:hover:border-primary/40">
       {body}
     </Link>
   ) : (

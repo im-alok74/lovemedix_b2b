@@ -1,36 +1,34 @@
-import Link from "next/link"
-import { Pill } from "lucide-react"
+import Link from 'next/link'
 
-import { Button } from "@/components/ui/button"
-import SignOutButton from "@/components/auth/signout-button"
-import { getCurrentUser } from "@/lib/auth"
-import { SITE } from "@/lib/site"
+import { Button } from '@/components/ui/button'
+import SignOutButton from '@/components/auth/signout-button'
+import { getCurrentUser } from '@/lib/auth'
+import { Logo } from '@/components/brand/logo'
 
 const DASHBOARD_BY_ROLE: Record<string, string> = {
-  ADMIN: "/admin",
-  PHARMACY: "/pharmacy/dashboard",
-  DISTRIBUTOR: "/distributor/dashboard",
+  ADMIN: '/admin',
+  PHARMACY: '/pharmacy/dashboard',
+  DISTRIBUTOR: '/distributor/dashboard',
 }
 
 export async function Header() {
   const user = await getCurrentUser()
-  const dashboardHref = user ? DASHBOARD_BY_ROLE[user.role] ?? "/" : null
+  const dashboardHref = user ? DASHBOARD_BY_ROLE[user.role] ?? '/' : null
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
       <div className="page-container">
-        <div className="flex h-16 items-center gap-3">
-          <Link href="/" className="flex shrink-0 items-center gap-2" aria-label={`${SITE.name} home`}>
-            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary">
-              <Pill className="h-[18px] w-[18px] text-primary-foreground" aria-hidden />
-            </span>
-            <span className="hidden flex-col leading-none sm:flex">
-              <span className="text-base font-semibold tracking-tight text-foreground">{SITE.name}</span>
-              <span className="mt-0.5 text-[11px] text-muted-foreground">{SITE.tagline}</span>
-            </span>
-          </Link>
+        <div className="flex h-16 items-center justify-between gap-3">
+          <Logo href="/" subtitle="B2B marketplace" />
 
-          <div className="ml-auto flex shrink-0 items-center gap-2">
+          <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
+            <a href="/#how" className="hover:text-foreground">How it works</a>
+            <a href="/#pharmacies" className="hover:text-foreground">For pharmacies</a>
+            <a href="/#distributors" className="hover:text-foreground">For distributors</a>
+            <a href="/#compliance" className="hover:text-foreground">Compliance</a>
+          </nav>
+
+          <div className="flex shrink-0 items-center gap-2">
             {user && dashboardHref ? (
               <>
                 <Button variant="ghost" size="sm" asChild>
@@ -46,7 +44,7 @@ export async function Header() {
                   <Link href="/signin">Sign in</Link>
                 </Button>
                 <Button size="sm" asChild>
-                  <Link href="/pharmacy/register">Register</Link>
+                  <Link href="/get-started">Get started</Link>
                 </Button>
               </>
             )}

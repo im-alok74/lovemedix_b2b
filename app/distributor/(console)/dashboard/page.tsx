@@ -1,8 +1,10 @@
+import Link from 'next/link'
+import { Pill, Boxes, CalendarClock, ClipboardList, TrendingUp } from 'lucide-react'
+
 import prisma from '@/lib/prisma'
 import { resolveDashboardGate } from '@/lib/auth'
 import { PageHeading, StatCard, Card, EmptyState, StatusBadge } from '@/components/dashboard/ui'
 import { formatINR } from '@/lib/money'
-import Link from 'next/link'
 
 export const metadata = { title: 'Overview' }
 export const dynamic = 'force-dynamic'
@@ -31,11 +33,11 @@ export default async function DistributorDashboard() {
     <div>
       <PageHeading title="Distributor overview" />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="Active listings" value={activeListings} href="/distributor/listings" />
-        <StatCard label="Low stock (≤10)" value={lowStock} href="/distributor/listings" />
-        <StatCard label="Expiring ≤90 days" value={expiring} href="/distributor/listings" />
-        <StatCard label="Orders awaiting you" value={pendingOrders} href="/distributor/purchase-orders?status=PENDING" />
-        <StatCard label="Fulfilled revenue" value={formatINR(revenue._sum.totalAmount ?? 0)} />
+        <StatCard label="Active listings" value={activeListings} href="/distributor/listings" icon={Pill} tone="primary" />
+        <StatCard label="Low stock (≤10)" value={lowStock} href="/distributor/listings" icon={Boxes} tone={lowStock > 0 ? 'warning' : 'default'} />
+        <StatCard label="Expiring ≤90 days" value={expiring} href="/distributor/listings" icon={CalendarClock} tone={expiring > 0 ? 'danger' : 'default'} />
+        <StatCard label="Orders awaiting you" value={pendingOrders} href="/distributor/purchase-orders?status=PENDING" icon={ClipboardList} tone={pendingOrders > 0 ? 'warning' : 'default'} />
+        <StatCard label="Fulfilled revenue" value={formatINR(revenue._sum.totalAmount ?? 0)} icon={TrendingUp} />
       </div>
 
       <Card className="mt-6 p-4">

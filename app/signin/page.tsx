@@ -1,46 +1,33 @@
-import { getCurrentUser } from '@/lib/auth'
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { getCurrentUser, roleHome } from '@/lib/auth'
+import { AuthShell } from '@/components/auth/auth-shell'
 import { SignInForm } from '@/components/auth/signin-form'
 
-export const metadata = {
-  title: 'Sign In | Lovemedix',
-}
+export const metadata = { title: 'Sign in' }
 
 export default async function SignInPage() {
   const user = await getCurrentUser()
-
-  if (user) {
-    const home = user.role === 'ADMIN' ? '/admin' : user.role === 'PHARMACY' ? '/pharmacy/dashboard' : '/distributor/dashboard'
-    redirect(home)
-  }
+  if (user) redirect(roleHome(user.role))
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <main className="flex flex-1 items-center justify-center bg-muted/30 py-12">
-        <div className="container px-4">
-          <Card className="mx-auto max-w-md">
-            <CardHeader>
-              <CardTitle className="text-2xl">Sign In</CardTitle>
-              <CardDescription>Enter your credentials to access your B2B account</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <SignInForm />
-            </CardContent>
-          </Card>
-          <div className="mx-auto mt-6 max-w-md text-center">
-            <p className="text-sm text-muted-foreground">
-              Don't have an account?{' '}
-              <Link href="/get-started" className="text-primary hover:underline">
-                Get started
-              </Link>
-            </p>
-          </div>
-        </div>
-      </main>
-    </div>
+    <AuthShell
+      title="Sign in to Lovemedix"
+      subtitle="Access your pharmacy, distributor or admin console."
+      footer={
+        <>
+          New to Lovemedix?{' '}
+          <Link href="/get-started" className="font-medium text-primary hover:underline">
+            Register your business
+          </Link>
+        </>
+      }
+    >
+      <Suspense>
+        <SignInForm />
+      </Suspense>
+    </AuthShell>
   )
 }

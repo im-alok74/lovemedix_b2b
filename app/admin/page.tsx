@@ -1,8 +1,8 @@
 import Link from 'next/link'
+import { Building2, Truck, FileCheck2, Pill, PackageSearch, ClipboardList, IndianRupee } from 'lucide-react'
 
 import prisma from '@/lib/prisma'
-import { PageHeading, StatCard, Card, EmptyState } from '@/components/dashboard/ui'
-import { StatusBadge } from '@/components/dashboard/ui'
+import { PageHeading, StatCard, Card, EmptyState, StatusBadge } from '@/components/dashboard/ui'
 import { formatINR } from '@/lib/money'
 
 export const metadata = { title: 'Overview' }
@@ -52,13 +52,13 @@ export default async function AdminOverviewPage() {
       <PageHeading title="Platform overview" description="Approvals, catalog and marketplace activity at a glance." />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Pharmacies pending" value={pharmaciesPending} href="/admin/pharmacies?status=PENDING" />
-        <StatCard label="Distributors pending" value={distributorsPending} href="/admin/distributors?status=PENDING" />
-        <StatCard label="Documents to review" value={documentsPending} href="/admin/documents" />
-        <StatCard label="Active medicines" value={medicines} href="/admin/medicines" />
-        <StatCard label="Open medicine requests" value={openRequests} href="/admin/medicine-requests" />
-        <StatCard label="Purchase orders today" value={ordersToday} href="/admin/purchase-orders" />
-        <StatCard label="Lifetime GMV" value={formatINR(gmv._sum.totalAmount ?? 0)} />
+        <StatCard label="Pharmacies pending" value={pharmaciesPending} href="/admin/pharmacies?status=PENDING" icon={Building2} tone={pharmaciesPending > 0 ? 'warning' : 'default'} />
+        <StatCard label="Distributors pending" value={distributorsPending} href="/admin/distributors?status=PENDING" icon={Truck} tone={distributorsPending > 0 ? 'warning' : 'default'} />
+        <StatCard label="Documents to review" value={documentsPending} href="/admin/documents" icon={FileCheck2} tone={documentsPending > 0 ? 'warning' : 'default'} />
+        <StatCard label="Active medicines" value={medicines} href="/admin/medicines" icon={Pill} tone="primary" />
+        <StatCard label="Open medicine requests" value={openRequests} href="/admin/medicine-requests" icon={PackageSearch} />
+        <StatCard label="Purchase orders today" value={ordersToday} href="/admin/purchase-orders" icon={ClipboardList} />
+        <StatCard label="Lifetime GMV" value={formatINR(gmv._sum.totalAmount ?? 0)} icon={IndianRupee} />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">

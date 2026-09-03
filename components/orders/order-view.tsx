@@ -1,6 +1,48 @@
+import { Check } from 'lucide-react'
+
 import { Card, StatusBadge } from '@/components/dashboard/ui'
 import { formatINR } from '@/lib/money'
+import { cn } from '@/lib/utils'
 import type { Prisma } from '@prisma/client'
+
+const FLOW = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED'] as const
+
+function Stepper({ status }: { status: string }) {
+  if (status === 'CANCELLED' || status === 'REJECTED') {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700">
+        Order {status.toLowerCase()}
+      </div>
+    )
+  }
+  const idx = FLOW.indexOf(status as (typeof FLOW)[number])
+  return (
+    <ol className="flex items-center gap-1 overflow-x-auto">
+      {FLOW.map((s, i) => {
+        const done = i < idx
+        const current = i === idx
+        return (
+          <li key={s} className="flex items-center gap-1">
+            <span
+              className={cn(
+                'flex h-6 w-6 items-center justify-center rounded-full border text-[11px] font-bold',
+                done && 'border-primary bg-primary text-primary-foreground',
+                current && 'border-primary bg-primary/10 text-primary',
+                !done && !current && 'border-border text-muted-foreground',
+              )}
+            >
+              {done ? <Check className="h-3.5 w-3.5" /> : i + 1}
+            </span>
+            <span className={cn('text-xs font-medium', current ? 'text-foreground' : 'text-muted-foreground')}>
+              {s.toLowerCase()}
+            </span>
+            {i < FLOW.length - 1 ? <span className={cn('mx-1 h-px w-6', done ? 'bg-primary' : 'bg-border')} /> : null}
+          </li>
+        )
+      })}
+    </ol>
+  )
+}
 
 type OrderWithRelations = Prisma.PurchaseOrderGetPayload<{
   include: {
@@ -15,6 +57,10 @@ type OrderWithRelations = Prisma.PurchaseOrderGetPayload<{
 export function OrderView({ order }: { order: OrderWithRelations }) {
   return (
     <div className="space-y-6">
+      <Card className="p-4">
+        <Stepper status={order.status} />
+      </Card>
+
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="p-4">
           <h2 className="mb-3 text-sm font-semibold">Order</h2>
