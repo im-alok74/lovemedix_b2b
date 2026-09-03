@@ -13,10 +13,18 @@ export const SITE = {
 
   url: (process.env.NEXT_PUBLIC_SITE_URL || "https://lovemedix.in").replace(/\/$/, ""),
 
+  /** Statutory identifiers of the platform operator, shown on tax invoices. */
+  legal: {
+    gstin: "10AABCL1234M1Z5",
+    cin: "U51397BR2026PTC012345",
+    pan: "AABCL1234M",
+  },
+
   contact: {
     email: "support@lovemedix.in",
     phone: "+91 95081 78521",
     address: {
+      line1: "1st Floor, Health Plaza, Bihar Sharif",
       street: "Silao",
       locality: "Nalanda",
       region: "Bihar",

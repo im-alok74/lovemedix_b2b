@@ -13,6 +13,7 @@ export interface DistributorSettings {
   phone: string
   email: string
   gstNumber: string
+  cin: string
   drugLicenseNumber: string
   addressLine1: string
   addressLine2: string
@@ -20,6 +21,10 @@ export interface DistributorSettings {
   state: string
   pincode: string
   minOrderValue: string
+  bankName: string
+  bankAccountNumber: string
+  bankIfsc: string
+  bankBranch: string
 }
 
 export function DistributorSettingsForm({ initial }: { initial: DistributorSettings }) {
@@ -62,6 +67,7 @@ export function DistributorSettingsForm({ initial }: { initial: DistributorSetti
           ['phone', 'Phone'],
           ['email', 'Email'],
           ['gstNumber', 'GSTIN'],
+          ['cin', 'CIN'],
           ['drugLicenseNumber', 'Drug licence number'],
           ['addressLine1', 'Address line 1'],
           ['addressLine2', 'Address line 2'],
@@ -69,6 +75,10 @@ export function DistributorSettingsForm({ initial }: { initial: DistributorSetti
           ['state', 'State'],
           ['pincode', 'Pincode'],
           ['minOrderValue', 'Minimum order value (₹)'],
+          ['bankName', 'Bank name (for invoices)'],
+          ['bankAccountNumber', 'Bank account number'],
+          ['bankIfsc', 'IFSC code'],
+          ['bankBranch', 'Branch'],
         ] as [keyof DistributorSettings, string][]
       ).map(([key, label]) => (
         <div key={key} className="space-y-1">

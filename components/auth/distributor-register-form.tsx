@@ -16,6 +16,7 @@ const FIELDS: { name: string; label: string; type?: string; required?: boolean; 
   { name: 'email', label: 'Login email', type: 'email', required: true, half: true },
   { name: 'password', label: 'Password', type: 'password', required: true, half: true },
   { name: 'gstNumber', label: 'GSTIN', half: true },
+  { name: 'cin', label: 'CIN', half: true },
   { name: 'businessLicense', label: 'Business licence no.', half: true },
   { name: 'drugLicenseNumber', label: 'Drug licence number', half: true },
   { name: 'licenseExpiry', label: 'Licence expiry', type: 'date', half: true },
@@ -25,6 +26,10 @@ const FIELDS: { name: string; label: string; type?: string; required?: boolean; 
   { name: 'city', label: 'City', required: true, half: true },
   { name: 'state', label: 'State', required: true, half: true },
   { name: 'pincode', label: 'Pincode', required: true, half: true },
+  { name: 'bankName', label: 'Bank name (shown on invoices)', half: true },
+  { name: 'bankAccountNumber', label: 'Bank account number', half: true },
+  { name: 'bankIfsc', label: 'IFSC code', half: true },
+  { name: 'bankBranch', label: 'Bank branch', half: true },
 ]
 
 export function DistributorRegisterForm() {

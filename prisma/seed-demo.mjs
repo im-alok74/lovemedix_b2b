@@ -28,9 +28,16 @@ async function main() {
   const admin = await prisma.user.findFirst({ where: { role: 'ADMIN' } })
 
   const distUser = await makeUser('distributor@demo.in', 'Demo Distributor', 'DISTRIBUTOR')
+  const bank = {
+    cin: 'U24230MH2019PTC098765',
+    bankName: 'HDFC Bank',
+    bankAccountNumber: '50200012345678',
+    bankIfsc: 'HDFC0000123',
+    bankBranch: 'Shivajinagar, Pune',
+  }
   const distributor = await prisma.distributorProfile.upsert({
     where: { userId: distUser.id },
-    update: { verificationStatus: 'VERIFIED' },
+    update: { verificationStatus: 'VERIFIED', ...bank },
     create: {
       userId: distUser.id,
       companyName: 'Meridian Pharma Distributors',
@@ -43,6 +50,11 @@ async function main() {
       state: 'Maharashtra',
       pincode: '411001',
       minOrderValue: 2000,
+      cin: 'U24230MH2019PTC098765',
+      bankName: 'HDFC Bank',
+      bankAccountNumber: '50200012345678',
+      bankIfsc: 'HDFC0000123',
+      bankBranch: 'Shivajinagar, Pune',
       verificationStatus: 'VERIFIED',
       verifiedAt: new Date(),
       verifiedBy: admin?.id ?? null,

@@ -3,8 +3,9 @@ import { notFound } from 'next/navigation'
 
 import prisma from '@/lib/prisma'
 import { getDistributorContext } from '@/lib/auth'
-import { InvoiceView } from '@/components/orders/invoice-view'
-import { PdfDownloadButton } from '@/components/pdf-download-button'
+import { computeInvoice } from '@/lib/invoice'
+import { TaxInvoice } from '@/components/orders/tax-invoice'
+import { InvoiceActions } from '@/components/orders/invoice-actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,14 +19,18 @@ export default async function DistributorInvoicePage({ params }: { params: Promi
   })
   if (!invoice) notFound()
 
+  const data = computeInvoice(invoice)
+
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <Link href={`/distributor/purchase-orders/${orderId}`} className="text-sm text-muted-foreground hover:underline">← Back to order</Link>
-        <PdfDownloadButton targetId="invoice-doc" fileName={`${invoice.invoiceNumber}.pdf`} />
+      <div className="mb-4 flex items-center justify-between print:hidden">
+        <Link href={`/distributor/purchase-orders/${orderId}`} className="text-sm text-muted-foreground hover:underline">
+          ← Back to order
+        </Link>
+        <InvoiceActions targetId="tax-invoice" fileName={`${invoice.invoiceNumber}.pdf`} />
       </div>
-      <div className="mt-4">
-        <InvoiceView invoice={invoice} />
+      <div className="overflow-x-auto">
+        <TaxInvoice data={data} />
       </div>
     </div>
   )

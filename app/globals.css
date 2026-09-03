@@ -313,12 +313,40 @@
 
 @media print {
   .no-print,
+  .print\:hidden,
   header,
   footer,
-  nav {
+  nav,
+  aside {
     display: none !important;
   }
   body {
     background: #fff;
+  }
+
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  /* When a tax invoice is on the page, it becomes the entire printed document. */
+  #tax-invoice {
+    position: absolute;
+    inset: 0;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Keep filled backgrounds (navy header, total row) when printing. */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  #tax-invoice table,
+  #tax-invoice tr,
+  #tax-invoice td,
+  #tax-invoice th {
+    break-inside: avoid;
   }
 }

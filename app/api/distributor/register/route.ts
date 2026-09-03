@@ -47,6 +47,11 @@ export async function POST(request: NextRequest) {
         state: d.state,
         pincode: d.pincode,
         minOrderValue: d.minOrderValue ?? 0,
+        cin: d.cin || null,
+        bankName: d.bankName || null,
+        bankAccountNumber: d.bankAccountNumber || null,
+        bankIfsc: d.bankIfsc || null,
+        bankBranch: d.bankBranch || null,
         verificationStatus: 'PENDING',
       },
     })

@@ -33,6 +33,7 @@ export default async function DistributorSettingsPage() {
             phone: p.phone ?? '',
             email: p.email ?? '',
             gstNumber: p.gstNumber ?? '',
+            cin: p.cin ?? '',
             drugLicenseNumber: p.drugLicenseNumber ?? '',
             addressLine1: p.addressLine1,
             addressLine2: p.addressLine2 ?? '',
@@ -40,6 +41,10 @@ export default async function DistributorSettingsPage() {
             state: p.state,
             pincode: p.pincode,
             minOrderValue: String(p.minOrderValue),
+            bankName: p.bankName ?? '',
+            bankAccountNumber: p.bankAccountNumber ?? '',
+            bankIfsc: p.bankIfsc ?? '',
+            bankBranch: p.bankBranch ?? '',
           }}
         />
       </Card>

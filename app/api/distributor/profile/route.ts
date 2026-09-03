@@ -19,6 +19,11 @@ const schema = z.object({
   state: z.string().trim().min(2).max(100).optional(),
   pincode: z.string().trim().regex(/^[1-9]\d{5}$/).optional(),
   minOrderValue: z.coerce.number().min(0).max(10_000_000).optional(),
+  cin: z.string().trim().max(30).optional().nullable().or(z.literal('')),
+  bankName: z.string().trim().max(120).optional().nullable().or(z.literal('')),
+  bankAccountNumber: z.string().trim().max(40).optional().nullable().or(z.literal('')),
+  bankIfsc: z.string().trim().max(20).optional().nullable().or(z.literal('')),
+  bankBranch: z.string().trim().max(120).optional().nullable().or(z.literal('')),
 })
 
 export async function PATCH(request: NextRequest) {
@@ -43,6 +48,11 @@ export async function PATCH(request: NextRequest) {
         ...(d.state !== undefined ? { state: d.state } : {}),
         ...(d.pincode !== undefined ? { pincode: d.pincode } : {}),
         ...(d.minOrderValue !== undefined ? { minOrderValue: d.minOrderValue } : {}),
+        ...(d.cin !== undefined ? { cin: d.cin || null } : {}),
+        ...(d.bankName !== undefined ? { bankName: d.bankName || null } : {}),
+        ...(d.bankAccountNumber !== undefined ? { bankAccountNumber: d.bankAccountNumber || null } : {}),
+        ...(d.bankIfsc !== undefined ? { bankIfsc: d.bankIfsc || null } : {}),
+        ...(d.bankBranch !== undefined ? { bankBranch: d.bankBranch || null } : {}),
       },
     })
     return ok(profile)

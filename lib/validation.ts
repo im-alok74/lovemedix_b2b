@@ -82,6 +82,11 @@ export const distributorRegisterSchema = z
     state: z.string().trim().min(2).max(100),
     pincode: z.string().trim().regex(/^[1-9]\d{5}$/, 'Enter a valid 6-digit pincode'),
     minOrderValue: z.coerce.number().min(0).max(10_000_000).optional().default(0),
+    cin: z.string().trim().max(30).optional().nullable().or(z.literal('')),
+    bankName: z.string().trim().max(120).optional().nullable().or(z.literal('')),
+    bankAccountNumber: z.string().trim().max(40).optional().nullable().or(z.literal('')),
+    bankIfsc: z.string().trim().max(20).optional().nullable().or(z.literal('')),
+    bankBranch: z.string().trim().max(120).optional().nullable().or(z.literal('')),
   })
   .refine((data) => !data.confirmPassword || data.password === data.confirmPassword, {
     message: 'Passwords do not match',
