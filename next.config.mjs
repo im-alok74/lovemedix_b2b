@@ -62,7 +62,7 @@ const nextConfig = {
 
   // Smaller client bundles: only the icons actually imported get shipped.
   experimental: {
-    optimizePackageImports: ["lucide-react", "date-fns", "recharts"],
+    optimizePackageImports: ["lucide-react"],
   },
 
   poweredByHeader: false,
