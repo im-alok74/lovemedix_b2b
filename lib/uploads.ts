@@ -3,15 +3,21 @@ import { v2 as cloudinary } from 'cloudinary'
 let configured = false
 
 export function cloudinaryReady(): boolean {
-  const { CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET } = process.env
-  if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) return false
+  const { CLOUDINARY_URL, CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET } = process.env
+  const hasParts = CLOUDINARY_CLOUD_NAME && CLOUDINARY_API_KEY && CLOUDINARY_API_SECRET
+  if (!CLOUDINARY_URL && !hasParts) return false
   if (!configured) {
-    cloudinary.config({
-      cloud_name: CLOUDINARY_CLOUD_NAME,
-      api_key: CLOUDINARY_API_KEY,
-      api_secret: CLOUDINARY_API_SECRET,
-      secure: true,
-    })
+    // With CLOUDINARY_URL set, config() reads it from the environment itself.
+    cloudinary.config(
+      CLOUDINARY_URL
+        ? { secure: true }
+        : {
+            cloud_name: CLOUDINARY_CLOUD_NAME,
+            api_key: CLOUDINARY_API_KEY,
+            api_secret: CLOUDINARY_API_SECRET,
+            secure: true,
+          },
+    )
     configured = true
   }
   return true
@@ -33,14 +39,25 @@ export async function uploadDocument(file: File, folder: string): Promise<Upload
 
   const buffer = Buffer.from(await file.arrayBuffer())
 
-  const result = await new Promise<{ secure_url: string; bytes: number; format: string }>((resolve, reject) => {
+  // PDFs deliver reliably as `raw`; images keep `image` so they render inline for
+  // the reviewer. public_id is Cloudinary-random, so links are unguessable.
+  const resourceType = file.type.startsWith('image/') ? 'image' : 'raw'
+
+  const result = await new Promise<{ secure_url: string; bytes: number; format?: string }>((resolve, reject) => {
     cloudinary.uploader
-      .upload_stream(
-        { folder: process.env[folder] || folder, resource_type: 'auto', access_mode: 'authenticated' },
-        (err, res) => (err || !res ? reject(err ?? new Error('Upload failed')) : resolve(res as never)),
-      )
+      .upload_stream({ folder: process.env[folder] || folder, resource_type: resourceType }, (err, res) => {
+        if (err || !res) {
+          const message =
+            (err && typeof err === 'object' && 'message' in err && typeof err.message === 'string' && err.message) ||
+            'Cloudinary upload failed'
+          console.error('[uploads] cloudinary error:', err)
+          reject(new Error(message))
+          return
+        }
+        resolve(res as never)
+      })
       .end(buffer)
   })
 
-  return { url: result.secure_url, bytes: result.bytes, format: result.format, originalName: file.name }
+  return { url: result.secure_url, bytes: result.bytes, format: result.format ?? '', originalName: file.name }
 }
