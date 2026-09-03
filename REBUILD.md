@@ -53,11 +53,15 @@ alongside, plus large hardcoded mock-data libs and a 1mg scraper.
   verified against the live dev server (place PO → confirm → invoice → ship →
   pay; add inventory → customer bill).
 
-### Still open / follow-ups
+- [x] **Phase 8 — Follow-ups.** Direct file upload (`/api/uploads`, Cloudinary
+  when `CLOUDINARY_*` set, graceful 501 + paste-a-link fallback). Client-side
+  invoice/bill PDF download (`html2pdf.js`). In-app notifications API + header
+  bell with unread badge and mark-all-read.
 
-- Direct in-app document upload (Cloudinary keys unset — currently paste-a-URL).
-- Invoice/bill PDF export (print-to-PDF works from the browser today).
-- Email/SMS notifications (in-app `Notification` rows only).
+### Still open
+
+- Set `CLOUDINARY_*` in the environment to turn on direct document upload.
+- Email/SMS delivery of notifications (in-app `Notification` rows only today).
 - The `origin/main` divergence (LoveMedix rebrand + portal-shell) is still
   unmerged; this branch was built on the local working tree per the audit.
 

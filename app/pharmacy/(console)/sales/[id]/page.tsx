@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma'
 import { getPharmacyContext } from '@/lib/auth'
 import { PageHeading } from '@/components/dashboard/ui'
 import { BillView } from '@/components/pharmacy/bill-view'
+import { PdfDownloadButton } from '@/components/pdf-download-button'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +23,7 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
     <div>
       <div className="flex items-center justify-between">
         <Link href="/pharmacy/sales" className="text-sm text-muted-foreground hover:underline">← Sales</Link>
+        <PdfDownloadButton targetId="bill-doc" fileName={`${sale.billNumber}.pdf`} />
       </div>
       <PageHeading title={`Bill ${sale.billNumber}`} />
       <BillView sale={sale} />

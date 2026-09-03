@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import prisma from '@/lib/prisma'
 import { getPharmacyContext } from '@/lib/auth'
 import { InvoiceView } from '@/components/orders/invoice-view'
+import { PdfDownloadButton } from '@/components/pdf-download-button'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +20,10 @@ export default async function PharmacyInvoicePage({ params }: { params: Promise<
 
   return (
     <div>
-      <Link href={`/pharmacy/purchase-orders/${orderId}`} className="text-sm text-muted-foreground hover:underline">← Back to order</Link>
+      <div className="flex items-center justify-between">
+        <Link href={`/pharmacy/purchase-orders/${orderId}`} className="text-sm text-muted-foreground hover:underline">← Back to order</Link>
+        <PdfDownloadButton targetId="invoice-doc" fileName={`${invoice.invoiceNumber}.pdf`} />
+      </div>
       <div className="mt-4">
         <InvoiceView invoice={invoice} />
       </div>

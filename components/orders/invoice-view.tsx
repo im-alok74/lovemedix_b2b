@@ -19,7 +19,7 @@ type InvoicePayload = Prisma.InvoiceGetPayload<{
 export function InvoiceView({ invoice }: { invoice: InvoicePayload }) {
   const { order } = invoice
   return (
-    <div className="mx-auto max-w-3xl rounded-xl border border-border bg-white p-8 text-sm text-zinc-900 print:border-0 print:p-0">
+    <div id="invoice-doc" className="mx-auto max-w-3xl rounded-xl border border-border bg-white p-8 text-sm text-zinc-900 print:border-0 print:p-0">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-lg font-bold">{SITE.name}</p>

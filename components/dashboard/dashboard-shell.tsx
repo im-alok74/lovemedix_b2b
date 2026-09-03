@@ -4,6 +4,7 @@ import { Pill } from 'lucide-react'
 
 import { SITE } from '@/lib/site'
 import SignOutButton from '@/components/auth/signout-button'
+import { NotificationsBell } from '@/components/dashboard/notifications-bell'
 
 export interface NavItem {
   href: string
@@ -63,9 +64,12 @@ export function DashboardShell({
             <span className="text-sm font-semibold">{workspace}</span>
           </div>
           <div className="hidden text-sm font-medium text-muted-foreground lg:block">{workspace}</div>
-          <span className="inline-flex items-center rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted">
-            <SignOutButton />
-          </span>
+          <div className="flex items-center gap-2">
+            <NotificationsBell />
+            <span className="inline-flex items-center rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted">
+              <SignOutButton />
+            </span>
+          </div>
         </header>
 
         {/* Mobile nav */}

@@ -10,7 +10,7 @@ type SalePayload = Prisma.SaleGetPayload<{
 
 export function BillView({ sale }: { sale: SalePayload }) {
   return (
-    <div className="mx-auto max-w-2xl rounded-xl border border-border bg-white p-8 text-sm text-zinc-900 print:border-0 print:p-0">
+    <div id="bill-doc" className="mx-auto max-w-2xl rounded-xl border border-border bg-white p-8 text-sm text-zinc-900 print:border-0 print:p-0">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-lg font-bold">{sale.pharmacy.pharmacyName}</p>

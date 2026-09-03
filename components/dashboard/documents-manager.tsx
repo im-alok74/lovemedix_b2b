@@ -30,8 +30,39 @@ const TYPES = [
 export function DocumentsManager({ endpoint, documents }: { endpoint: string; documents: DocRow[] }) {
   const router = useRouter()
   const { toast } = useToast()
-  const [form, setForm] = useState({ documentType: 'DRUG_LICENSE', fileName: '', fileUrl: '', expiresAt: '' })
+  const [form, setForm] = useState({ documentType: 'DRUG_LICENSE', fileName: '', fileUrl: '', expiresAt: '', fileSize: 0, mimeType: '' })
   const [busy, setBusy] = useState(false)
+  const [uploading, setUploading] = useState(false)
+
+  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const body = new FormData()
+      body.append('file', file)
+      const res = await fetch('/api/uploads', { method: 'POST', body })
+      const data = await res.json().catch(() => ({}))
+      if (res.status === 501) {
+        toast({ title: 'Paste a link instead', description: data?.error })
+        return
+      }
+      if (!res.ok || data?.success === false) {
+        toast({ title: 'Upload failed', description: data?.error, variant: 'destructive' })
+        return
+      }
+      setForm((f) => ({
+        ...f,
+        fileUrl: data.data.fileUrl,
+        fileName: f.fileName || data.data.fileName,
+        fileSize: data.data.fileSize ?? 0,
+        mimeType: data.data.mimeType ?? '',
+      }))
+      toast({ title: 'File uploaded', description: 'Set the type and save.' })
+    } finally {
+      setUploading(false)
+    }
+  }
 
   async function add(e: React.FormEvent) {
     e.preventDefault()
@@ -40,14 +71,14 @@ export function DocumentsManager({ endpoint, documents }: { endpoint: string; do
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, fileSize: form.fileSize || null, mimeType: form.mimeType || null }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok || data?.success === false) {
         toast({ title: 'Upload failed', description: data?.error, variant: 'destructive' })
         return
       }
-      setForm({ documentType: 'DRUG_LICENSE', fileName: '', fileUrl: '', expiresAt: '' })
+      setForm({ documentType: 'DRUG_LICENSE', fileName: '', fileUrl: '', expiresAt: '', fileSize: 0, mimeType: '' })
       toast({ title: 'Document added', description: 'It will be reviewed by our team.' })
       router.refresh()
     } finally {
@@ -99,10 +130,13 @@ export function DocumentsManager({ endpoint, documents }: { endpoint: string; do
 
       <form onSubmit={add} className="rounded-xl border border-border bg-card p-4">
         <h2 className="mb-3 text-sm font-semibold">Add a document</h2>
-        <p className="mb-4 text-xs text-muted-foreground">
-          Upload the file to your storage (Drive, Dropbox, S3…) and paste a shareable link. Direct in-app upload is
-          coming soon.
-        </p>
+        <div className="mb-4 space-y-1">
+          <Label>Upload a file</Label>
+          <input type="file" accept=".pdf,image/*" onChange={onFile} disabled={uploading} className="block text-sm" />
+          <p className="text-xs text-muted-foreground">
+            {uploading ? 'Uploading…' : 'PDF or image, up to 8 MB. Or paste a shareable link below.'}
+          </p>
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1">
             <Label>Document type</Label>
