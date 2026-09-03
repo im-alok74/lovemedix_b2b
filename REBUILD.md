@@ -83,7 +83,6 @@ Known non-blocking items:
 
 ### Still open
 
-- Set `CLOUDINARY_*` in the environment to turn on direct document upload.
 - Email/SMS delivery of notifications (in-app `Notification` rows only today).
 - The `origin/main` divergence (LoveMedix rebrand + portal-shell) is still
   unmerged; this branch was built on the local working tree per the audit.
