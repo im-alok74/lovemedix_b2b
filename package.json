@@ -7,9 +7,14 @@
     "dev": "next dev",
     "lint": "eslint .",
     "start": "next start",
-    "scrape:medicines": "node scripts/scrape-1mg-medicines.js",
-    "seed:medicines": "node scripts/seed-medicines-simple.js",
-    "seed:medicines:ts": "ts-node scripts/seed-medicines.ts"
+    "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "db:seed": "node prisma/seed.mjs"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "1.0.2",
