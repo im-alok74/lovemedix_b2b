@@ -1,23 +1,21 @@
 /**
  * Single source of truth for brand identity, contact details and SEO defaults.
- *
- * Everything that renders the company name — page titles, invoices, emails, structured
- * data — reads from here. Previously "Davaa.in" and "Davaa.in" were hardcoded in
- * different files and the storefront disagreed with the invoices.
+ * Everything that renders the company name — page titles, invoices, structured
+ * data — reads from here.
  */
 
 export const SITE = {
-  name: "Davaa.in",
-  legalName: "Davaa Pharma Private Limited",
-  tagline: "Medicines in Minutes",
+  name: "Lovemedix",
+  legalName: "Lovemedix Healthcare Private Limited",
+  tagline: "B2B Pharmaceutical Marketplace",
   description:
-    "Order prescription and OTC medicines online from verified pharmacies. Genuine medicines, transparent pricing and fast doorstep delivery across India.",
+    "Lovemedix connects verified pharmacies with approved pharmaceutical distributors for wholesale bulk procurement, inventory management and B2B invoicing.",
 
-  url: (process.env.NEXT_PUBLIC_SITE_URL || "https://davaa.in").replace(/\/$/, ""),
+  url: (process.env.NEXT_PUBLIC_SITE_URL || "https://lovemedix.in").replace(/\/$/, ""),
 
   contact: {
-    email: "support@davaa.in",
-    phone: "+91 9508178521",
+    email: "support@lovemedix.in",
+    phone: "+91 95081 78521",
     address: {
       street: "Silao",
       locality: "Nalanda",
@@ -28,39 +26,9 @@ export const SITE = {
   },
 
   social: {
-    facebook: "https://facebook.com/davaain",
-    twitter: "https://twitter.com/davaain",
-    instagram: "https://instagram.com/davaain",
-  },
-
-  /** Delivery promise shown across the storefront. Keep in sync with reality. */
-  promise: {
-    deliveryWindow: "2–24 hours",
-    freeDeliveryAbove: 500,
-    returnWindow: "7 days",
-  },
-
-  /**
-   * Human assistance channels.
-   *
-   * A large share of the launch audience will not complete an order entirely on their
-   * own — someone ordering for a parent, someone who does not know the medicine name,
-   * someone whose prescription is handwritten. These channels are surfaced on the
-   * homepage and in the footer, not buried on a contact page.
-   *
-   * `whatsappNumber` is digits only with country code, as wa.me requires.
-   */
-  support: {
-    whatsappNumber: "919508178521",
-    hours: "9am–8pm, Monday to Saturday",
+    linkedin: "https://www.linkedin.com/company/lovemedix",
   },
 } as const
-
-/** Prefilled WhatsApp deep link. `text` becomes the first message the customer sends. */
-export function whatsappUrl(text?: string): string {
-  const base = `https://wa.me/${SITE.support.whatsappNumber}`
-  return text ? `${base}?text=${encodeURIComponent(text)}` : base
-}
 
 /** `tel:` href with the spaces stripped, which some dialers choke on. */
 export function telUrl(): string {
@@ -74,7 +42,7 @@ export function absoluteUrl(path = "/"): string {
 
 /**
  * Page title helper. Home passes nothing and gets the brand line; every other page
- * gets "Page · Davaa.in", which keeps titles under the ~60 chars Google renders.
+ * gets "Page · Lovemedix".
  */
 export function pageTitle(title?: string): string {
   return title ? `${title} · ${SITE.name}` : `${SITE.name} — ${SITE.tagline}`

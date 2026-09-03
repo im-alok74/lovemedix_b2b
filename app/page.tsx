@@ -5,8 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Building2, ShieldCheck, TrendingUp, Users, ArrowRight, CheckCircle2 } from 'lucide-react'
 
 export const metadata = {
-  title: 'Davaa B2B - Pharmaceutical Procurement Platform',
-  description: 'The B2B platform connecting pharmacies with verified distributors for wholesale medicine procurement.',
+  title: 'Lovemedix — B2B Pharmaceutical Marketplace',
+  description: 'The B2B platform connecting verified pharmacies with approved distributors for wholesale medicine procurement.',
 }
 
 export default function HomePage() {

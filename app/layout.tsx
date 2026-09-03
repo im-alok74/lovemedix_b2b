@@ -4,7 +4,6 @@ import { Inter } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 
 import "./globals.css"
-import { BottomNav } from "@/components/bottom-nav"
 import { Toaster } from "@/components/ui/toaster"
 import { JsonLd } from "@/components/seo/json-ld"
 import { organizationJsonld, websiteJsonld } from "@/lib/seo"
@@ -28,12 +27,11 @@ export const metadata: Metadata = {
   description: SITE.description,
   applicationName: SITE.name,
   keywords: [
-    "online pharmacy India",
-    "buy medicines online",
-    "medicine home delivery",
-    "prescription medicines online",
-    "generic medicine substitutes",
-    "order medicine online",
+    "B2B pharmacy marketplace",
+    "wholesale medicine procurement",
+    "pharmaceutical distributor platform",
+    "bulk medicine ordering",
+    "pharmacy inventory management",
     SITE.name,
   ],
   authors: [{ name: SITE.legalName }],
@@ -104,10 +102,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           Skip to main content
         </a>
         {children}
-        {/* Sits outside the page tree so every storefront route gets the same mobile
-            navigation without each one remembering to render it. It hides itself on the
-            seller consoles and during checkout. */}
-        <BottomNav />
         <Toaster />
         <Analytics />
       </body>

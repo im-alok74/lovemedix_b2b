@@ -10,14 +10,10 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",
-    // Matches the brand teal in the mark and the OG card. The previous #0f766e was a
-    // different green and did not appear anywhere else in the product.
     theme_color: "#0F7B93",
     orientation: "portrait",
-    categories: ["medical", "health", "shopping"],
+    categories: ["medical", "business", "productivity"],
     lang: "en-IN",
-    // A maskable 512 is what Android uses for the home-screen icon; without one the
-    // launcher shrinks the mark inside a white circle. All four files exist in public/.
     icons: [
       { src: "/icon-32.png", sizes: "32x32", type: "image/png" },
       { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
@@ -26,9 +22,9 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
     ],
     shortcuts: [
-      { name: "Browse medicines", url: "/medicines" },
-      { name: "Upload prescription", url: "/upload-prescription" },
-      { name: "My orders", url: "/orders" },
+      { name: "Pharmacy dashboard", url: "/pharmacy/dashboard" },
+      { name: "Distributor dashboard", url: "/distributor/dashboard" },
+      { name: "Admin panel", url: "/admin" },
     ],
   }
 }
