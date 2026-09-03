@@ -58,6 +58,29 @@ alongside, plus large hardcoded mock-data libs and a 1mg scraper.
   invoice/bill PDF download (`html2pdf.js`). In-app notifications API + header
   bell with unread badge and mark-all-read.
 
+- [x] **Phase 9 — Branding & polish.** Lovemedix identity (LogoMark/Logo),
+  rebuilt landing page, split-screen auth, branded dashboard shell with icon
+  nav + active state, richer catalog browser with sticky cart bar, order status
+  stepper, stat-card icons/tones.
+
+## Audit — 2026-09-03
+
+Route sweep with authenticated sessions for all three roles: **every page route
+(50+) returns 200**. Full flows verified against the running dev server:
+
+- Pharmacy: sign in → browse catalog → add to cart → place purchase order →
+  order detail with status stepper → (distributor confirms) → GST invoice with
+  PDF download. ✅
+- Distributor: confirm order → invoice auto-generated → ship (stock decremented). ✅
+- Admin: overview stats, approval queues, catalog, all list/detail pages. ✅
+
+Known non-blocking items:
+- Dev-only `controller[kState].transformAlgorithm` warning from a Next 16 /
+  Turbopack internal stream (ignore-listed frames); no route affected, production
+  build clean.
+- The in-app browser pane caches client bundles aggressively across dev restarts;
+  a hard reload / fresh tab is needed after a rebuild.
+
 ### Still open
 
 - Set `CLOUDINARY_*` in the environment to turn on direct document upload.
