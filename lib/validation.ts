@@ -105,6 +105,154 @@ export const documentUploadSchema = z.object({
   expiresAt: z.string().trim().optional().nullable().or(z.literal('')),
 })
 
+// --- Admin -------------------------------------------------------------------
+
+export const verificationActionSchema = z.object({
+  action: z.enum(['approve', 'reject', 'suspend', 'reinstate']),
+  reason: z.string().trim().max(500).optional().nullable(),
+})
+
+export const documentActionSchema = z.object({
+  action: z.enum(['verify', 'reject']),
+  reason: z.string().trim().max(500).optional().nullable(),
+})
+
+const optionalString = z.string().trim().max(255).optional().nullable().or(z.literal(''))
+
+export const medicineSchema = z.object({
+  name: z.string().trim().min(2).max(255),
+  genericName: optionalString,
+  manufacturer: optionalString,
+  categoryId: z.coerce.number().int().positive().optional().nullable(),
+  form: z.string().trim().max(50).optional().nullable().or(z.literal('')),
+  strength: z.string().trim().max(50).optional().nullable().or(z.literal('')),
+  packSize: z.string().trim().max(50).optional().nullable().or(z.literal('')),
+  hsnCode: z.string().trim().max(20).optional().nullable().or(z.literal('')),
+  mrp: z.coerce.number().min(0).max(1_000_000),
+  gstRate: z.coerce.number().min(0).max(28).optional().default(5),
+  requiresPrescription: z.coerce.boolean().optional().default(false),
+  description: z.string().trim().max(4000).optional().nullable().or(z.literal('')),
+  photoUrl: z.string().trim().url().max(500).optional().nullable().or(z.literal('')),
+  status: z.enum(['ACTIVE', 'INACTIVE', 'DRAFT']).optional().default('ACTIVE'),
+})
+
+export const categorySchema = z.object({
+  name: z.string().trim().min(2).max(100),
+  description: z.string().trim().max(1000).optional().nullable().or(z.literal('')),
+  displayOrder: z.coerce.number().int().min(0).max(999).optional().default(0),
+  isActive: z.coerce.boolean().optional().default(true),
+})
+
+export const userUpdateSchema = z.object({
+  status: z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED']).optional(),
+  fullName: z.string().trim().min(2).max(150).optional(),
+  phone: phoneSchema.optional(),
+})
+
+export const settingsSchema = z.object({
+  settings: z.array(
+    z.object({
+      key: z.string().trim().min(1).max(100),
+      value: z.string().max(2000).nullable(),
+    }),
+  ).min(1).max(100),
+})
+
+// --- Distributor listings ----------------------------------------------------
+
+export const listingSchema = z.object({
+  medicineId: z.coerce.number().int().positive(),
+  batchNumber: z.string().trim().max(100).optional().nullable().or(z.literal('')),
+  mfgDate: z.string().trim().optional().nullable().or(z.literal('')),
+  expiryDate: z.string().trim().min(1, 'Expiry date is required'),
+  mrp: z.coerce.number().min(0).max(1_000_000),
+  unitPrice: z.coerce.number().min(0).max(1_000_000),
+  quantity: z.coerce.number().int().min(0).max(10_000_000),
+  minOrderQuantity: z.coerce.number().int().min(1).max(1_000_000).optional().default(1),
+  hsnCode: z.string().trim().max(20).optional().nullable().or(z.literal('')),
+  notes: z.string().trim().max(1000).optional().nullable().or(z.literal('')),
+  isActive: z.coerce.boolean().optional().default(true),
+})
+
+// --- Pharmacy: purchase orders, requests, inventory, customers, sales --------
+
+export const purchaseOrderSchema = z.object({
+  distributorId: z.coerce.number().int().positive(),
+  pharmacyNote: z.string().trim().max(1000).optional().nullable().or(z.literal('')),
+  expectedBy: z.string().trim().optional().nullable().or(z.literal('')),
+  items: z
+    .array(
+      z.object({
+        distributorListingId: z.coerce.number().int().positive(),
+        quantity: z.coerce.number().int().min(1).max(1_000_000),
+      }),
+    )
+    .min(1, 'Add at least one item'),
+})
+
+export const purchaseOrderStatusSchema = z.object({
+  status: z.enum(['CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REJECTED']),
+  note: z.string().trim().max(1000).optional().nullable().or(z.literal('')),
+})
+
+export const medicineRequestSchema = z.object({
+  kind: z.enum(['OUT_OF_STOCK', 'NEW_MEDICINE']),
+  medicineId: z.coerce.number().int().positive().optional().nullable(),
+  distributorId: z.coerce.number().int().positive().optional().nullable(),
+  requestedName: z.string().trim().max(255).optional().nullable().or(z.literal('')),
+  manufacturer: z.string().trim().max(255).optional().nullable().or(z.literal('')),
+  strength: z.string().trim().max(50).optional().nullable().or(z.literal('')),
+  packSize: z.string().trim().max(50).optional().nullable().or(z.literal('')),
+  requestedQuantity: z.coerce.number().int().min(1).max(1_000_000).optional().default(1),
+  notes: z.string().trim().max(1000).optional().nullable().or(z.literal('')),
+})
+
+export const inventorySchema = z.object({
+  medicineId: z.coerce.number().int().positive(),
+  batchNumber: z.string().trim().max(100).optional().nullable().or(z.literal('')),
+  mfgDate: z.string().trim().optional().nullable().or(z.literal('')),
+  expiryDate: z.string().trim().optional().nullable().or(z.literal('')),
+  mrp: z.coerce.number().min(0).max(1_000_000),
+  costPrice: z.coerce.number().min(0).max(1_000_000).optional().default(0),
+  sellingPrice: z.coerce.number().min(0).max(1_000_000),
+  quantity: z.coerce.number().int().min(0).max(10_000_000),
+  reorderLevel: z.coerce.number().int().min(0).max(1_000_000).optional().default(0),
+  isActive: z.coerce.boolean().optional().default(true),
+})
+
+export const customerSchema = z.object({
+  name: z.string().trim().min(2).max(150),
+  phone: z.string().trim().max(20).optional().nullable().or(z.literal('')),
+  email: z.string().trim().email().max(255).optional().nullable().or(z.literal('')),
+  address: z.string().trim().max(500).optional().nullable().or(z.literal('')),
+  notes: z.string().trim().max(1000).optional().nullable().or(z.literal('')),
+})
+
+export const saleSchema = z.object({
+  customerId: z.coerce.number().int().positive().optional().nullable(),
+  customerName: z.string().trim().max(150).optional().nullable().or(z.literal('')),
+  customerPhone: z.string().trim().max(20).optional().nullable().or(z.literal('')),
+  paymentMethod: z.string().trim().max(50).optional().nullable().or(z.literal('')),
+  amountPaid: z.coerce.number().min(0).optional().default(0),
+  discountAmount: z.coerce.number().min(0).optional().default(0),
+  prescriptionRef: z.string().trim().max(255).optional().nullable().or(z.literal('')),
+  notes: z.string().trim().max(1000).optional().nullable().or(z.literal('')),
+  items: z
+    .array(
+      z.object({
+        inventoryId: z.coerce.number().int().positive().optional().nullable(),
+        medicineId: z.coerce.number().int().positive(),
+        description: z.string().trim().min(1).max(255),
+        quantity: z.coerce.number().int().min(1).max(1_000_000),
+        unitPrice: z.coerce.number().min(0).max(1_000_000),
+        discountPercent: z.coerce.number().min(0).max(100).optional().default(0),
+        gstRate: z.coerce.number().min(0).max(28).optional().default(0),
+        batchNumber: z.string().trim().max(100).optional().nullable().or(z.literal('')),
+      }),
+    )
+    .min(1, 'Add at least one item'),
+})
+
 export function firstIssue(error: z.ZodError): string {
   return error.issues[0]?.message ?? 'Invalid input'
 }
