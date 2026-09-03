@@ -33,7 +33,7 @@ export interface UploadResult {
 const MAX_BYTES = 8 * 1024 * 1024
 const ALLOWED = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg', 'image/webp']
 
-export async function uploadDocument(file: File, folder: string): Promise<UploadResult> {
+export async function uploadDocument(file: File, folder = 'lovemedix/documents'): Promise<UploadResult> {
   if (file.size > MAX_BYTES) throw new Error('File exceeds 8 MB')
   if (file.type && !ALLOWED.includes(file.type)) throw new Error('Only PDF or image files are allowed')
 
@@ -45,7 +45,7 @@ export async function uploadDocument(file: File, folder: string): Promise<Upload
 
   const result = await new Promise<{ secure_url: string; bytes: number; format?: string }>((resolve, reject) => {
     cloudinary.uploader
-      .upload_stream({ folder: process.env[folder] || folder, resource_type: resourceType }, (err, res) => {
+      .upload_stream({ folder: process.env.CLOUDINARY_DOCUMENTS_FOLDER || folder, resource_type: resourceType }, (err, res) => {
         if (err || !res) {
           const message =
             (err && typeof err === 'object' && 'message' in err && typeof err.message === 'string' && err.message) ||

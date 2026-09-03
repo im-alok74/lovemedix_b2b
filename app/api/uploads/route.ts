@@ -15,7 +15,7 @@ export const runtime = 'nodejs'
  */
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireUser()
+    await requireUser()
     const limit = rateLimit(clientKey(request, 'upload'), 30, 60 * 60 * 1000)
     if (!limit.allowed) return NextResponse.json({ success: false, error: 'Too many uploads' }, { status: 429 })
 
@@ -30,11 +30,8 @@ export async function POST(request: NextRequest) {
     const file = form.get('file')
     if (!(file instanceof File)) return NextResponse.json({ success: false, error: 'No file provided' }, { status: 400 })
 
-    const folder =
-      user.role === 'DISTRIBUTOR' || user.role === 'PHARMACY' ? 'CLOUDINARY_DOCUMENTS_FOLDER' : 'CLOUDINARY_DOCUMENTS_FOLDER'
-
     try {
-      const result = await uploadDocument(file, folder)
+      const result = await uploadDocument(file)
       return ok({ fileUrl: result.url, fileName: result.originalName, fileSize: result.bytes, mimeType: file.type || null })
     } catch (e) {
       return NextResponse.json({ success: false, error: e instanceof Error ? e.message : 'Upload failed' }, { status: 400 })
