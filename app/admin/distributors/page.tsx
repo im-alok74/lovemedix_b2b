@@ -3,6 +3,7 @@ import type { Prisma } from '@prisma/client'
 
 import prisma from '@/lib/prisma'
 import { PageHeading, Card, EmptyState, StatusBadge, Pagination } from '@/components/dashboard/ui'
+import { ApiAction } from '@/components/dashboard/api-action'
 import { parseListParams } from '@/lib/list-params'
 
 export const metadata = { title: 'Distributors' }
@@ -80,6 +81,7 @@ export default async function AdminDistributorsPage({
                 <th className="px-4 py-2.5">Contact</th>
                 <th className="px-4 py-2.5">Listings</th>
                 <th className="px-4 py-2.5">Status</th>
+                <th className="px-4 py-2.5">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -98,6 +100,28 @@ export default async function AdminDistributorsPage({
                   </td>
                   <td className="px-4 py-2.5 tabular-nums">{r._count.listings}</td>
                   <td className="px-4 py-2.5"><StatusBadge status={r.verificationStatus} /></td>
+                  <td className="px-4 py-2.5">
+                    {r.verificationStatus === 'PENDING' ? (
+                      <div className="flex flex-wrap gap-2">
+                        <ApiAction
+                          endpoint={`/api/admin/distributors/${r.id}`}
+                          body={{ action: 'approve' }}
+                          label="Approve"
+                          variant="primary"
+                        />
+                        <ApiAction
+                          endpoint={`/api/admin/distributors/${r.id}`}
+                          body={{ action: 'reject' }}
+                          promptReason="reason"
+                          label="Reject"
+                          variant="danger"
+                          confirm="Reject this registration?"
+                        />
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
