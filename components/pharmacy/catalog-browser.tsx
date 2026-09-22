@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Search, ShoppingCart, Minus, Plus, Check, PackageSearch } from 'lucide-react'
 
 import { Input } from '@/components/ui/input'
@@ -27,6 +28,7 @@ interface CatalogItem {
     manufacturer: string | null
     gstRate: number
     requiresPrescription: boolean
+    photoUrl: string | null
     category: string | null
   }
 }
@@ -141,13 +143,20 @@ export function CatalogBrowser({ categories }: { categories: { id: number; name:
             return (
               <div key={item.listingId} className="flex flex-col rounded-xl border border-border bg-card p-4">
                 <div className="flex items-start justify-between gap-2">
-                  <div>
+                  <div className="flex items-start gap-3">
+                    {item.medicine.photoUrl ? (
+                      <Image src={item.medicine.photoUrl} alt={item.medicine.name} width={48} height={48} className="h-12 w-12 shrink-0 rounded-md border border-border object-cover" />
+                    ) : (
+                      <div className="h-12 w-12 shrink-0 rounded-md border border-border bg-muted/40" />
+                    )}
+                    <div>
                     <p className="font-semibold leading-snug">
                       {item.medicine.name}{item.medicine.strength ? ` ${item.medicine.strength}` : ''}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {[item.medicine.form, item.medicine.packSize, item.medicine.manufacturer].filter(Boolean).join(' · ')}
                     </p>
+                    </div>
                   </div>
                   {item.medicine.requiresPrescription ? (
                     <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">Rx</span>

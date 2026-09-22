@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -42,10 +43,40 @@ export function MedicineForm({
   const { toast } = useToast()
   const [values, setValues] = useState<MedicineFormValues>({ ...EMPTY, ...initial })
   const [busy, setBusy] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const isEdit = Boolean(values.id)
 
   function set<K extends keyof MedicineFormValues>(key: K, value: MedicineFormValues[K]) {
     setValues((v) => ({ ...v, [key]: value }))
+  }
+
+  async function onImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Invalid file', description: 'Please select an image file.', variant: 'destructive' })
+      return
+    }
+    setUploading(true)
+    try {
+      const body = new FormData()
+      body.append('file', file)
+      const res = await fetch('/api/uploads', { method: 'POST', body })
+      const data = await res.json().catch(() => ({}))
+      if (res.status === 501) {
+        toast({ title: 'Direct upload unavailable', description: data?.error })
+        return
+      }
+      if (!res.ok || data?.success === false) {
+        toast({ title: 'Upload failed', description: data?.error ?? `HTTP ${res.status}`, variant: 'destructive' })
+        return
+      }
+      set('photoUrl', data.data.fileUrl)
+      toast({ title: 'Image uploaded', description: 'Preview updated. Save to attach this image to the medicine.' })
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
   }
 
   async function submit(e: React.FormEvent) {
@@ -111,7 +142,21 @@ export function MedicineForm({
             <option value="DRAFT">Draft</option>
           </select>
         </Field>
-        <Field label="Photo URL"><Input value={values.photoUrl} onChange={(e) => set('photoUrl', e.target.value)} /></Field>
+        <Field label="Medicine image">
+          <div className="space-y-2">
+            <input type="file" accept="image/*" onChange={onImageSelect} disabled={uploading} className="block text-sm" />
+            <Input
+              value={values.photoUrl}
+              onChange={(e) => set('photoUrl', e.target.value)}
+              placeholder={uploading ? 'Uploading…' : 'Or paste image URL'}
+            />
+            {values.photoUrl ? (
+              <div className="h-24 w-24 overflow-hidden rounded-md border border-border bg-muted/40">
+                <Image src={values.photoUrl} alt="Medicine preview" width={96} height={96} className="h-full w-full object-cover" />
+              </div>
+            ) : null}
+          </div>
+        </Field>
       </div>
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={values.requiresPrescription} onChange={(e) => set('requiresPrescription', e.target.checked)} />

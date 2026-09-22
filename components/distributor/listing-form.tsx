@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,6 +14,7 @@ interface MedicineHit {
   strength: string | null
   manufacturer: string | null
   mrp: string
+  photoUrl: string | null
 }
 
 export interface ListingInitial {
@@ -139,7 +141,16 @@ export function ListingForm({ initial }: { initial?: ListingInitial }) {
                           }))
                         }
                       >
-                        {h.name} {h.strength} <span className="text-muted-foreground">{h.manufacturer}</span>
+                        <div className="flex items-center gap-2">
+                          {h.photoUrl ? (
+                            <Image src={h.photoUrl} alt={h.name} width={32} height={32} className="h-8 w-8 rounded border border-border object-cover" />
+                          ) : (
+                            <div className="h-8 w-8 rounded border border-border bg-muted/40" />
+                          )}
+                          <span>
+                            {h.name} {h.strength} <span className="text-muted-foreground">{h.manufacturer}</span>
+                          </span>
+                        </div>
                       </button>
                     </li>
                   ))}

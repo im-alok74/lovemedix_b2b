@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import type { Prisma } from '@prisma/client'
 
 import prisma from '@/lib/prisma'
@@ -36,7 +37,7 @@ export default async function AdminMedicinesPage({
       skip,
       take: limit,
       select: {
-        id: true, name: true, strength: true, manufacturer: true, mrp: true, gstRate: true,
+        id: true, name: true, strength: true, manufacturer: true, mrp: true, gstRate: true, photoUrl: true,
         status: true, requiresPrescription: true,
         category: { select: { name: true } },
         _count: { select: { listings: true } },
@@ -88,10 +89,19 @@ export default async function AdminMedicinesPage({
               {rows.map((m) => (
                 <tr key={m.id} className="hover:bg-muted/30">
                   <td className="px-4 py-2.5">
-                    <Link href={`/admin/medicines/${m.id}`} className="font-medium hover:underline">
-                      {m.name}{m.strength ? ` ${m.strength}` : ''}
-                    </Link>
-                    {m.requiresPrescription ? <span className="ml-2 text-xs text-amber-700">Rx</span> : null}
+                    <div className="flex items-center gap-2">
+                      {m.photoUrl ? (
+                        <Image src={m.photoUrl} alt={m.name} width={36} height={36} className="h-9 w-9 rounded border border-border object-cover" />
+                      ) : (
+                        <div className="h-9 w-9 rounded border border-border bg-muted/40" />
+                      )}
+                      <div>
+                        <Link href={`/admin/medicines/${m.id}`} className="font-medium hover:underline">
+                          {m.name}{m.strength ? ` ${m.strength}` : ''}
+                        </Link>
+                        {m.requiresPrescription ? <span className="ml-2 text-xs text-amber-700">Rx</span> : null}
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-2.5 text-muted-foreground">{m.category?.name ?? '—'}</td>
                   <td className="px-4 py-2.5 text-muted-foreground">{m.manufacturer ?? '—'}</td>

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 import prisma from '@/lib/prisma'
 import { getDistributorContext } from '@/lib/auth'
@@ -29,7 +30,7 @@ export default async function DistributorListingsPage({
       orderBy: { updatedAt: 'desc' },
       skip,
       take: limit,
-      include: { medicine: { select: { name: true, strength: true, manufacturer: true } } },
+      include: { medicine: { select: { name: true, strength: true, manufacturer: true, photoUrl: true } } },
     }),
     prisma.distributorListing.count({ where }),
   ])
@@ -75,10 +76,19 @@ export default async function DistributorListingsPage({
                 return (
                   <tr key={l.id} className="hover:bg-muted/30">
                     <td className="px-4 py-2.5">
-                      <Link href={`/distributor/listings/${l.id}`} className="font-medium hover:underline">
-                        {l.medicine.name}{l.medicine.strength ? ` ${l.medicine.strength}` : ''}
-                      </Link>
-                      <div className="text-xs text-muted-foreground">{l.medicine.manufacturer}</div>
+                      <div className="flex items-center gap-2">
+                        {l.medicine.photoUrl ? (
+                          <Image src={l.medicine.photoUrl} alt={l.medicine.name} width={36} height={36} className="h-9 w-9 rounded border border-border object-cover" />
+                        ) : (
+                          <div className="h-9 w-9 rounded border border-border bg-muted/40" />
+                        )}
+                        <div>
+                          <Link href={`/distributor/listings/${l.id}`} className="font-medium hover:underline">
+                            {l.medicine.name}{l.medicine.strength ? ` ${l.medicine.strength}` : ''}
+                          </Link>
+                          <div className="text-xs text-muted-foreground">{l.medicine.manufacturer}</div>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-2.5 text-muted-foreground">
                       {l.batchNumber ?? '—'}
