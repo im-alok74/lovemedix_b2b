@@ -167,6 +167,9 @@ export const settingsSchema = z.object({
 
 export const listingSchema = z.object({
   medicineId: z.coerce.number().int().positive(),
+  variantId: z.coerce.number().int().positive().optional().nullable(),
+  variantSize: z.string().trim().max(100).optional().nullable().or(z.literal('')),
+  variantSku: z.string().trim().max(100).optional().nullable().or(z.literal('')),
   batchNumber: z.string().trim().max(100).optional().nullable().or(z.literal('')),
   mfgDate: z.string().trim().optional().nullable().or(z.literal('')),
   expiryDate: z.string().trim().min(1, 'Expiry date is required'),

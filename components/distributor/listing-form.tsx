@@ -15,12 +15,16 @@ interface MedicineHit {
   manufacturer: string | null
   mrp: string
   photoUrl: string | null
+  variants: { id: number; size: string; sku: string | null }[]
 }
 
 export interface ListingInitial {
   id?: number
   medicineId?: number
   medicineLabel?: string
+  variantId?: number
+  variantSize?: string
+  variantSku?: string
   batchNumber?: string
   mfgDate?: string
   expiryDate?: string
@@ -39,6 +43,10 @@ export function ListingForm({ initial }: { initial?: ListingInitial }) {
   const [v, setV] = useState({
     medicineId: initial?.medicineId ? String(initial.medicineId) : '',
     medicineLabel: initial?.medicineLabel ?? '',
+    variantId: initial?.variantId ? String(initial.variantId) : '',
+    variantSize: initial?.variantSize ?? '',
+    variantSku: initial?.variantSku ?? '',
+    variants: [] as { id: number; size: string; sku: string | null }[],
     batchNumber: initial?.batchNumber ?? '',
     mfgDate: initial?.mfgDate ?? '',
     expiryDate: initial?.expiryDate ?? '',
@@ -80,6 +88,9 @@ export function ListingForm({ initial }: { initial?: ListingInitial }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           medicineId: Number(v.medicineId),
+          variantId: v.variantId ? Number(v.variantId) : null,
+          variantSize: v.variantSize,
+          variantSku: v.variantSku,
           batchNumber: v.batchNumber,
           mfgDate: v.mfgDate,
           expiryDate: v.expiryDate,
@@ -138,6 +149,10 @@ export function ListingForm({ initial }: { initial?: ListingInitial }) {
                             medicineId: String(h.id),
                             medicineLabel: `${h.name}${h.strength ? ` ${h.strength}` : ''}${h.manufacturer ? ` · ${h.manufacturer}` : ''}`,
                             mrp: s.mrp || h.mrp,
+                            variants: h.variants,
+                            variantId: '',
+                            variantSize: '',
+                            variantSku: '',
                           }))
                         }
                       >
@@ -160,6 +175,26 @@ export function ListingForm({ initial }: { initial?: ListingInitial }) {
           )}
         </div>
       )}
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Size / variant">
+          {v.variants.length > 0 ? (
+            <select
+              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+              value={v.variantId ? `id:${v.variantId}` : 'new'}
+              onChange={(e) => {
+                const selected = v.variants.find((variant) => `id:${variant.id}` === e.target.value)
+                setV((s) => ({ ...s, variantId: selected ? String(selected.id) : '', variantSize: selected?.size ?? '', variantSku: selected?.sku ?? '' }))
+              }}
+            >
+              {v.variants.map((variant) => <option key={variant.id} value={`id:${variant.id}`}>{variant.size}{variant.sku ? ` · ${variant.sku}` : ''}</option>)}
+              <option value="new">Add new size…</option>
+            </select>
+          ) : null}
+          {!v.variantId ? <Input value={v.variantSize} onChange={(e) => setV((s) => ({ ...s, variantSize: e.target.value }))} placeholder="2 ml, 5 ml, 10 ml" /> : null}
+        </Field>
+        <Field label="SKU / product code"><Input value={v.variantSku} onChange={(e) => setV((s) => ({ ...s, variantSku: e.target.value }))} /></Field>
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Batch number"><Input value={v.batchNumber} onChange={(e) => setV((s) => ({ ...s, batchNumber: e.target.value }))} /></Field>

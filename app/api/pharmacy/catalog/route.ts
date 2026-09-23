@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
       prisma.distributorListing.findMany({
         where,
         orderBy: [{ unitPrice: 'asc' }],
+        distinct: ['medicineId'],
         skip,
         take: limit,
         select: {
@@ -52,13 +53,14 @@ export async function GET(request: NextRequest) {
           minOrderQuantity: true,
           batchNumber: true,
           expiryDate: true,
+          variant: { select: { id: true, size: true, sku: true } },
           distributor: { select: { id: true, companyName: true, city: true, minOrderValue: true } },
           medicine: {
             select: { id: true, name: true, strength: true, form: true, packSize: true, manufacturer: true, gstRate: true, requiresPrescription: true, photoUrl: true, category: { select: { name: true } } },
           },
         },
       }),
-      prisma.distributorListing.count({ where }),
+      prisma.distributorListing.groupBy({ where, by: ['medicineId'] }),
     ])
 
     return ok({
@@ -70,6 +72,7 @@ export async function GET(request: NextRequest) {
         minOrderQuantity: r.minOrderQuantity,
         batchNumber: r.batchNumber,
         expiryDate: r.expiryDate,
+        variant: r.variant ? { id: r.variant.id, size: r.variant.size, sku: r.variant.sku } : null,
         distributor: { id: r.distributor.id, name: r.distributor.companyName, city: r.distributor.city, minOrderValue: Number(r.distributor.minOrderValue) },
         medicine: {
           id: r.medicine.id,
@@ -84,7 +87,7 @@ export async function GET(request: NextRequest) {
           category: r.medicine.category?.name ?? null,
         },
       })),
-      ...pageMeta(total, page, limit),
+      ...pageMeta(total.length, page, limit),
     })
   } catch (error) {
     return handleApiError(error, 'pharmacy/catalog GET')

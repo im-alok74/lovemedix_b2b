@@ -18,6 +18,7 @@ interface CatalogItem {
   minOrderQuantity: number
   batchNumber: string | null
   expiryDate: string
+  variant: { id: number; size: string; sku: string | null } | null
   distributor: { id: number; name: string; city: string; minOrderValue: number }
   medicine: {
     id: number
@@ -97,7 +98,7 @@ export function CatalogBrowser({ categories }: { categories: { id: number; name:
       {/* Filters */}
       <div className="sticky top-16 z-20 -mx-4 mb-5 border-b border-border bg-background/90 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="relative min-w-[220px] flex-1">
+          <div className="relative min-w-55 flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={q}
@@ -150,11 +151,11 @@ export function CatalogBrowser({ categories }: { categories: { id: number; name:
                       <div className="h-12 w-12 shrink-0 rounded-md border border-border bg-muted/40" />
                     )}
                     <div>
-                    <p className="font-semibold leading-snug">
+                    <Link href={`/pharmacy/catalog/${item.medicine.id}`} className="font-semibold leading-snug hover:underline">
                       {item.medicine.name}{item.medicine.strength ? ` ${item.medicine.strength}` : ''}
-                    </p>
+                    </Link>
                     <p className="text-xs text-muted-foreground">
-                      {[item.medicine.form, item.medicine.packSize, item.medicine.manufacturer].filter(Boolean).join(' · ')}
+                      {[item.variant?.size, item.medicine.form, item.medicine.packSize, item.medicine.manufacturer].filter(Boolean).join(' · ')}
                     </p>
                     </div>
                   </div>

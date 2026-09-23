@@ -13,7 +13,7 @@ function optionalDate(v?: string | null) {
 }
 
 async function ownListing(id: number, distributorId: number) {
-  return prisma.distributorListing.findFirst({ where: { id, distributorId } })
+  return prisma.distributorListing.findFirst({ where: { id, distributorId }, include: { medicine: { select: { id: true } }, variant: true } })
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -21,16 +21,35 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const { distributorId } = await requireApprovedDistributor()
     const id = Number((await params).id)
     if (!Number.isInteger(id)) return badRequest('Invalid id')
-    if (!(await ownListing(id, distributorId))) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 })
+    const own = await ownListing(id, distributorId)
+    if (!own) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 })
 
     const parsed = safeParse(listingSchema.partial(), await request.json())
     if (!parsed.ok) return badRequest(parsed.error, 'VALIDATION_ERROR')
     const d = parsed.data
 
+    let variantId = d.variantId
+    if (variantId !== undefined) {
+      if (variantId === null) {
+        variantId = null
+      } else if (!(await prisma.medicineVariant.findFirst({ where: { id: variantId, medicineId: own.medicine.id, isActive: true } }))) {
+        return badRequest('Unknown medicine variant', 'NOT_FOUND')
+      }
+    } else if (d.variantSize) {
+      const variant = await prisma.medicineVariant.upsert({
+        where: { medicineId_size: { medicineId: own.medicine.id, size: d.variantSize } },
+        create: { medicineId: own.medicine.id, size: d.variantSize, sku: d.variantSku || null },
+        update: d.variantSku ? { sku: d.variantSku } : {},
+        select: { id: true },
+      })
+      variantId = variant.id
+    }
+
     const listing = await prisma.distributorListing.update({
       where: { id },
       data: {
         ...(d.batchNumber !== undefined ? { batchNumber: d.batchNumber || null } : {}),
+        ...(variantId !== undefined ? { variantId } : {}),
         ...(d.mfgDate !== undefined ? { mfgDate: optionalDate(d.mfgDate) } : {}),
         ...(d.expiryDate !== undefined && d.expiryDate ? { expiryDate: optionalDate(d.expiryDate)! } : {}),
         ...(d.mrp !== undefined ? { mrp: d.mrp } : {}),

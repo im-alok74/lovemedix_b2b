@@ -24,12 +24,16 @@ export interface MedicineFormValues {
   status: string
   photoUrl: string
   description: string
+  images: { id: number; imageUrl: string }[]
+  variants: { id: number; size: string; sku: string | null }[]
 }
 
 const EMPTY: MedicineFormValues = {
   name: '', genericName: '', manufacturer: '', categoryId: '', form: '', strength: '',
   packSize: '', hsnCode: '', mrp: '', gstRate: '5', requiresPrescription: false,
   status: 'ACTIVE', photoUrl: '', description: '',
+  images: [],
+  variants: [],
 }
 
 export function MedicineForm({
@@ -44,6 +48,7 @@ export function MedicineForm({
   const [values, setValues] = useState<MedicineFormValues>({ ...EMPTY, ...initial })
   const [busy, setBusy] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [removedVariantIds, setRemovedVariantIds] = useState<number[]>([])
   const isEdit = Boolean(values.id)
 
   function set<K extends keyof MedicineFormValues>(key: K, value: MedicineFormValues[K]) {
@@ -51,28 +56,31 @@ export function MedicineForm({
   }
 
   async function onImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (!file.type.startsWith('image/')) {
-      toast({ title: 'Invalid file', description: 'Please select an image file.', variant: 'destructive' })
+    const files = Array.from(e.target.files ?? [])
+    if (!files.length) return
+    if (files.some((file) => !file.type.startsWith('image/'))) {
+      toast({ title: 'Invalid file', description: 'Please select image files only.', variant: 'destructive' })
       return
     }
     setUploading(true)
     try {
-      const body = new FormData()
-      body.append('file', file)
-      const res = await fetch('/api/uploads', { method: 'POST', body })
-      const data = await res.json().catch(() => ({}))
-      if (res.status === 501) {
-        toast({ title: 'Direct upload unavailable', description: data?.error })
-        return
+      const uploaded: { id: number; imageUrl: string }[] = []
+      for (const file of files) {
+        const body = new FormData()
+        body.append('file', file)
+        const res = await fetch('/api/uploads', { method: 'POST', body })
+        const data = await res.json().catch(() => ({}))
+        if (res.status === 501) {
+          toast({ title: 'Direct upload unavailable', description: data?.error })
+          return
+        }
+        if (!res.ok || data?.success === false) throw new Error(data?.error ?? `HTTP ${res.status}`)
+        uploaded.push({ id: -Date.now() - uploaded.length, imageUrl: data.data.fileUrl })
       }
-      if (!res.ok || data?.success === false) {
-        toast({ title: 'Upload failed', description: data?.error ?? `HTTP ${res.status}`, variant: 'destructive' })
-        return
-      }
-      set('photoUrl', data.data.fileUrl)
-      toast({ title: 'Image uploaded', description: 'Preview updated. Save to attach this image to the medicine.' })
+      setValues((v) => ({ ...v, images: [...v.images, ...uploaded], photoUrl: v.photoUrl || uploaded[0]?.imageUrl || '' }))
+      toast({ title: `${uploaded.length} image${uploaded.length > 1 ? 's' : ''} uploaded`, description: 'Save to attach them to the medicine.' })
+    } catch (error) {
+      toast({ title: 'Upload failed', description: error instanceof Error ? error.message : 'Upload failed', variant: 'destructive' })
     } finally {
       setUploading(false)
       e.target.value = ''
@@ -98,6 +106,20 @@ export function MedicineForm({
       if (!res.ok || data?.success === false) {
         toast({ title: 'Could not save', description: data?.error ?? `HTTP ${res.status}`, variant: 'destructive' })
         return
+      }
+      const newImages = values.images.filter((image) => image.id < 0)
+      if (newImages.length) {
+        await fetch(`/api/admin/medicines/${data.data.id}/images`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ images: newImages }),
+        })
+      }
+      for (const variant of values.variants) {
+        await fetch(`/api/admin/medicines/${data.data.id}/variants`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ size: variant.size, sku: variant.sku }),
+        })
+      }
+      for (const variantId of removedVariantIds) {
+        await fetch(`/api/admin/medicines/${data.data.id}/variants?variantId=${variantId}`, { method: 'DELETE' })
       }
       toast({ title: isEdit ? 'Medicine updated' : 'Medicine added' })
       router.push('/admin/medicines')
@@ -144,7 +166,7 @@ export function MedicineForm({
         </Field>
         <Field label="Medicine image">
           <div className="space-y-2">
-            <input type="file" accept="image/*" onChange={onImageSelect} disabled={uploading} className="block text-sm" />
+            <input type="file" accept="image/*" multiple onChange={onImageSelect} disabled={uploading} className="block text-sm" />
             <Input
               value={values.photoUrl}
               onChange={(e) => set('photoUrl', e.target.value)}
@@ -153,6 +175,16 @@ export function MedicineForm({
             {values.photoUrl ? (
               <div className="h-24 w-24 overflow-hidden rounded-md border border-border bg-muted/40">
                 <Image src={values.photoUrl} alt="Medicine preview" width={96} height={96} className="h-full w-full object-cover" />
+              </div>
+            ) : null}
+            {values.images.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {values.images.map((image) => (
+                  <div key={image.id} className="group relative h-16 w-16 overflow-hidden rounded border border-border">
+                    <Image src={image.imageUrl} alt="Medicine product" width={64} height={64} className="h-full w-full object-cover" />
+                    {values.photoUrl === image.imageUrl ? <span className="absolute inset-x-0 bottom-0 bg-black/70 px-1 text-center text-[9px] text-white">Primary</span> : <button type="button" onClick={() => set('photoUrl', image.imageUrl)} className="absolute inset-x-0 bottom-0 bg-black/70 px-1 text-[9px] text-white opacity-0 group-hover:opacity-100">Make primary</button>}
+                  </div>
+                ))}
               </div>
             ) : null}
           </div>
@@ -168,6 +200,18 @@ export function MedicineForm({
           value={values.description}
           onChange={(e) => set('description', e.target.value)}
         />
+      </Field>
+      <Field label="Product variants">
+        <div className="space-y-2">
+          {values.variants.map((variant, index) => (
+            <div key={variant.id} className="flex items-center gap-2">
+              <Input value={variant.size} placeholder="Size, e.g. 5 ml" onChange={(e) => setValues((v) => ({ ...v, variants: v.variants.map((item, i) => i === index ? { ...item, size: e.target.value } : item) }))} />
+              <Input value={variant.sku ?? ''} placeholder="SKU" onChange={(e) => setValues((v) => ({ ...v, variants: v.variants.map((item, i) => i === index ? { ...item, sku: e.target.value } : item) }))} />
+              <button type="button" className="text-xs text-destructive hover:underline" onClick={() => { if (variant.id > 0) setRemovedVariantIds((ids) => [...ids, variant.id]); setValues((v) => ({ ...v, variants: v.variants.filter((_, i) => i !== index) })) }}>Remove</button>
+            </div>
+          ))}
+          <button type="button" className="text-sm text-primary hover:underline" onClick={() => setValues((v) => ({ ...v, variants: [...v.variants, { id: -Date.now(), size: '', sku: null }] }))}>Add size variant</button>
+        </div>
       </Field>
       <button
         type="submit"
