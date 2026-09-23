@@ -21,13 +21,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const { distributorId } = await requireApprovedDistributor()
     const id = Number((await params).id)
     if (!Number.isInteger(id)) return badRequest('Invalid id')
-    if (!(await ownListing(id, distributorId))) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 })
+    const own = await ownListing(id, distributorId)
+    if (!own) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 })
 
     const parsed = safeParse(listingSchema.partial(), await request.json())
     if (!parsed.ok) return badRequest(parsed.error, 'VALIDATION_ERROR')
     const d = parsed.data
 
-    const own = await ownListing(id, distributorId)
     let variantId = d.variantId
     if (variantId !== undefined) {
       if (variantId === null) {
