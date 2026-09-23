@@ -13,7 +13,7 @@ export default async function EditMedicinePage({ params }: { params: Promise<{ i
   if (!Number.isInteger(id)) notFound()
 
   const [medicine, categories] = await Promise.all([
-    prisma.medicine.findUnique({ where: { id }, include: { images: { orderBy: { sortOrder: 'asc' } } } }),
+    prisma.medicine.findUnique({ where: { id }, include: { images: { orderBy: { sortOrder: 'asc' } }, variants: { where: { isActive: true }, orderBy: { size: 'asc' } } } }),
     prisma.category.findMany({ where: { isActive: true }, orderBy: { displayOrder: 'asc' }, select: { id: true, name: true } }),
   ])
   if (!medicine) notFound()
@@ -54,6 +54,7 @@ export default async function EditMedicinePage({ params }: { params: Promise<{ i
             photoUrl: medicine.photoUrl ?? '',
             description: medicine.description ?? '',
             images: medicine.images.map((image) => ({ id: image.id, imageUrl: image.imageUrl })),
+            variants: medicine.variants,
           }}
         />
       </Card>

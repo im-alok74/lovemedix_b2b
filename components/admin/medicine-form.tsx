@@ -25,6 +25,7 @@ export interface MedicineFormValues {
   photoUrl: string
   description: string
   images: { id: number; imageUrl: string }[]
+  variants: { id: number; size: string; sku: string | null }[]
 }
 
 const EMPTY: MedicineFormValues = {
@@ -32,6 +33,7 @@ const EMPTY: MedicineFormValues = {
   packSize: '', hsnCode: '', mrp: '', gstRate: '5', requiresPrescription: false,
   status: 'ACTIVE', photoUrl: '', description: '',
   images: [],
+  variants: [],
 }
 
 export function MedicineForm({
@@ -46,6 +48,7 @@ export function MedicineForm({
   const [values, setValues] = useState<MedicineFormValues>({ ...EMPTY, ...initial })
   const [busy, setBusy] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [removedVariantIds, setRemovedVariantIds] = useState<number[]>([])
   const isEdit = Boolean(values.id)
 
   function set<K extends keyof MedicineFormValues>(key: K, value: MedicineFormValues[K]) {
@@ -109,6 +112,14 @@ export function MedicineForm({
         await fetch(`/api/admin/medicines/${data.data.id}/images`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ images: newImages }),
         })
+      }
+      for (const variant of values.variants) {
+        await fetch(`/api/admin/medicines/${data.data.id}/variants`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ size: variant.size, sku: variant.sku }),
+        })
+      }
+      for (const variantId of removedVariantIds) {
+        await fetch(`/api/admin/medicines/${data.data.id}/variants?variantId=${variantId}`, { method: 'DELETE' })
       }
       toast({ title: isEdit ? 'Medicine updated' : 'Medicine added' })
       router.push('/admin/medicines')
@@ -189,6 +200,18 @@ export function MedicineForm({
           value={values.description}
           onChange={(e) => set('description', e.target.value)}
         />
+      </Field>
+      <Field label="Product variants">
+        <div className="space-y-2">
+          {values.variants.map((variant, index) => (
+            <div key={variant.id} className="flex items-center gap-2">
+              <Input value={variant.size} placeholder="Size, e.g. 5 ml" onChange={(e) => setValues((v) => ({ ...v, variants: v.variants.map((item, i) => i === index ? { ...item, size: e.target.value } : item) }))} />
+              <Input value={variant.sku ?? ''} placeholder="SKU" onChange={(e) => setValues((v) => ({ ...v, variants: v.variants.map((item, i) => i === index ? { ...item, sku: e.target.value } : item) }))} />
+              <button type="button" className="text-xs text-destructive hover:underline" onClick={() => { if (variant.id > 0) setRemovedVariantIds((ids) => [...ids, variant.id]); setValues((v) => ({ ...v, variants: v.variants.filter((_, i) => i !== index) })) }}>Remove</button>
+            </div>
+          ))}
+          <button type="button" className="text-sm text-primary hover:underline" onClick={() => setValues((v) => ({ ...v, variants: [...v.variants, { id: -Date.now(), size: '', sku: null }] }))}>Add size variant</button>
+        </div>
       </Field>
       <button
         type="submit"
