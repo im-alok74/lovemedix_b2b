@@ -7,7 +7,7 @@ const DISTRIBUTOR_NEXT: Record<string, { to: string; label: string; variant: 'pr
     { to: 'CONFIRMED', label: 'Accept order', variant: 'primary' },
     { to: 'REJECTED', label: 'Reject', variant: 'danger' },
   ],
-  CONFIRMED: [{ to: 'PROCESSING', label: 'Start processing', variant: 'primary' }],
+  CONFIRMED: [{ to: 'SHIPPED', label: 'Mark shipped', variant: 'primary' }],
   PROCESSING: [{ to: 'SHIPPED', label: 'Mark shipped', variant: 'primary' }],
   SHIPPED: [{ to: 'DELIVERED', label: 'Mark delivered', variant: 'primary' }],
 }

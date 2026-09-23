@@ -10,7 +10,7 @@ import { formatINR } from '@/lib/money'
 export const metadata = { title: 'Purchase orders' }
 export const dynamic = 'force-dynamic'
 
-const TABS = ['ALL', 'PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'] as const
+const TABS = ['ALL', 'PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED'] as const
 
 export default async function DistributorPurchaseOrdersPage({
   searchParams,
