@@ -19,7 +19,7 @@ export default async function PharmacyMedicinePage({ params }: { params: Promise
       listings: {
         where: { isActive: true, quantity: { gt: 0 }, expiryDate: { gt: new Date() }, distributor: { verificationStatus: 'VERIFIED', isActive: true } },
         orderBy: { unitPrice: 'asc' },
-        include: { distributor: { select: { id: true, companyName: true, city: true } } },
+        include: { distributor: { select: { id: true, companyName: true, city: true } }, variant: { select: { id: true, size: true, sku: true } } },
       },
     },
   })
@@ -38,7 +38,7 @@ export default async function PharmacyMedicinePage({ params }: { params: Promise
       <ProductDetail
         medicine={{ id: medicine.id, name: medicine.name, genericName: medicine.genericName, manufacturer: medicine.manufacturer, form: medicine.form, strength: medicine.strength, packSize: medicine.packSize, hsnCode: medicine.hsnCode, mrp: Number(medicine.mrp), gstRate: Number(medicine.gstRate), requiresPrescription: medicine.requiresPrescription, description: medicine.description, category: medicine.category?.name ?? null }}
         images={images}
-        listings={medicine.listings.map((listing) => ({ id: listing.id, distributor: { id: listing.distributor.id, name: listing.distributor.companyName, city: listing.distributor.city }, unitPrice: Number(listing.unitPrice), mrp: Number(listing.mrp), available: listing.quantity - listing.reservedQuantity, minOrderQuantity: listing.minOrderQuantity, batchNumber: listing.batchNumber, expiryDate: listing.expiryDate.toISOString() }))}
+        listings={medicine.listings.map((listing) => ({ id: listing.id, variant: listing.variant, distributor: { id: listing.distributor.id, name: listing.distributor.companyName, city: listing.distributor.city }, unitPrice: Number(listing.unitPrice), mrp: Number(listing.mrp), available: listing.quantity - listing.reservedQuantity, minOrderQuantity: listing.minOrderQuantity, batchNumber: listing.batchNumber, expiryDate: listing.expiryDate.toISOString() }))}
       />
     </div>
   )

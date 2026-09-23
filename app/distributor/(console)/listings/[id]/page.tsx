@@ -15,7 +15,7 @@ export default async function EditListingPage({ params }: { params: Promise<{ id
   const id = Number((await params).id)
   const listing = await prisma.distributorListing.findFirst({
     where: { id, distributorId: ctx.id },
-    include: { medicine: { select: { name: true, strength: true, manufacturer: true } } },
+    include: { medicine: { select: { name: true, strength: true, manufacturer: true } }, variant: true },
   })
   if (!listing) notFound()
 
@@ -43,6 +43,9 @@ export default async function EditListingPage({ params }: { params: Promise<{ id
             id: listing.id,
             medicineId: listing.medicineId,
             medicineLabel: `${listing.medicine.name}${listing.medicine.strength ? ` ${listing.medicine.strength}` : ''}${listing.medicine.manufacturer ? ` · ${listing.medicine.manufacturer}` : ''}`,
+            variantId: listing.variantId ?? undefined,
+            variantSize: listing.variant?.size ?? '',
+            variantSku: listing.variant?.sku ?? '',
             batchNumber: listing.batchNumber ?? '',
             mfgDate: toDateInput(listing.mfgDate),
             expiryDate: toDateInput(listing.expiryDate),

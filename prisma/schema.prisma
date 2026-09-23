@@ -233,6 +233,7 @@ model Medicine {
 
   category           Category?            @relation(fields: [categoryId], references: [id])
   images             MedicineImage[]
+  variants           MedicineVariant[]
   listings           DistributorListing[]
   pharmacyInventory  PharmacyInventory[]
   purchaseOrderItems PurchaseOrderItem[]
@@ -243,6 +244,24 @@ model Medicine {
   @@index([status])
   @@index([name])
   @@map("medicines")
+}
+
+model MedicineVariant {
+  id         Int      @id @default(autoincrement())
+  medicineId Int      @map("medicine_id")
+  size       String   @db.VarChar(100)
+  sku        String?  @db.VarChar(100)
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  medicine Medicine             @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+  listings DistributorListing[]
+
+  @@unique([medicineId, size])
+  @@unique([medicineId, sku])
+  @@index([medicineId, isActive])
+  @@map("medicine_variants")
 }
 
 model MedicineImage {
@@ -267,6 +286,7 @@ model DistributorListing {
   id               Int       @id @default(autoincrement())
   distributorId    Int       @map("distributor_id")
   medicineId       Int       @map("medicine_id")
+  variantId        Int?      @map("variant_id")
   batchNumber      String?   @map("batch_number") @db.VarChar(100)
   mfgDate          DateTime? @map("mfg_date")
   expiryDate       DateTime  @map("expiry_date")
@@ -283,11 +303,13 @@ model DistributorListing {
 
   distributor        DistributorProfile  @relation(fields: [distributorId], references: [id], onDelete: Cascade)
   medicine           Medicine            @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+  variant            MedicineVariant?   @relation(fields: [variantId], references: [id], onDelete: SetNull)
   purchaseOrderItems PurchaseOrderItem[]
 
-  @@unique([distributorId, medicineId, batchNumber])
+  @@unique([distributorId, medicineId, variantId, batchNumber])
   @@index([distributorId, isActive])
   @@index([medicineId])
+  @@index([variantId])
   @@index([expiryDate])
   @@map("distributor_listings")
 }

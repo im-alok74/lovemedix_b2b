@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       },
       orderBy: { name: 'asc' },
       take: 25,
-      select: { id: true, name: true, strength: true, manufacturer: true, form: true, packSize: true, mrp: true, gstRate: true, photoUrl: true },
+      select: { id: true, name: true, strength: true, manufacturer: true, form: true, packSize: true, mrp: true, gstRate: true, photoUrl: true, variants: { where: { isActive: true }, orderBy: { size: 'asc' }, select: { id: true, size: true, sku: true } } },
     })
     return ok(medicines)
   } catch (error) {

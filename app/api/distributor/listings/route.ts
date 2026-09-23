@@ -26,10 +26,25 @@ export async function POST(request: NextRequest) {
     if (expiry.getTime() < Date.now()) return badRequest('Expiry date is in the past')
 
     try {
-      const listing = await prisma.distributorListing.create({
-        data: {
+      const listing = await prisma.$transaction(async (tx) => {
+        let variantId = d.variantId ?? null
+        if (variantId) {
+          const variant = await tx.medicineVariant.findFirst({ where: { id: variantId, medicineId: d.medicineId, isActive: true }, select: { id: true } })
+          if (!variant) throw new Error('Unknown medicine variant')
+        } else if (d.variantSize) {
+          const variant = await tx.medicineVariant.upsert({
+            where: { medicineId_size: { medicineId: d.medicineId, size: d.variantSize } },
+            create: { medicineId: d.medicineId, size: d.variantSize, sku: d.variantSku || null },
+            update: d.variantSku ? { sku: d.variantSku } : {},
+            select: { id: true },
+          })
+          variantId = variant.id
+        }
+        return tx.distributorListing.create({
+          data: {
           distributorId,
           medicineId: d.medicineId,
+          variantId,
           batchNumber: d.batchNumber || null,
           mfgDate: optionalDate(d.mfgDate),
           expiryDate: expiry,
@@ -40,10 +55,12 @@ export async function POST(request: NextRequest) {
           hsnCode: d.hsnCode || null,
           notes: d.notes || null,
           isActive: d.isActive ?? true,
-        },
+          },
+        })
       })
       return ok(listing, 201)
     } catch (e) {
+      if (e instanceof Error && e.message === 'Unknown medicine variant') return badRequest(e.message, 'NOT_FOUND')
       if (e && typeof e === 'object' && 'code' in e && (e as { code?: string }).code === 'P2002') {
         return conflict('You already have a listing for this medicine and batch')
       }

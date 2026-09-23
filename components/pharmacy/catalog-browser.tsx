@@ -18,6 +18,7 @@ interface CatalogItem {
   minOrderQuantity: number
   batchNumber: string | null
   expiryDate: string
+  variant: { id: number; size: string; sku: string | null } | null
   distributor: { id: number; name: string; city: string; minOrderValue: number }
   medicine: {
     id: number
@@ -154,7 +155,7 @@ export function CatalogBrowser({ categories }: { categories: { id: number; name:
                       {item.medicine.name}{item.medicine.strength ? ` ${item.medicine.strength}` : ''}
                     </Link>
                     <p className="text-xs text-muted-foreground">
-                      {[item.medicine.form, item.medicine.packSize, item.medicine.manufacturer].filter(Boolean).join(' · ')}
+                      {[item.variant?.size, item.medicine.form, item.medicine.packSize, item.medicine.manufacturer].filter(Boolean).join(' · ')}
                     </p>
                     </div>
                   </div>

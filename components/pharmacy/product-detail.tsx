@@ -11,6 +11,7 @@ import { formatINR } from '@/lib/money'
 interface ProductImage { id: number; url: string; alt: string }
 interface ProductListing {
   id: number
+  variant: { id: number; size: string; sku: string | null } | null
   distributor: { id: number; name: string; city: string }
   unitPrice: number
   mrp: number
@@ -31,13 +32,16 @@ export function ProductDetail({
 }) {
   const { toast } = useToast()
   const [selectedImage, setSelectedImage] = useState(images[0])
+  const variantOptions = Array.from(new Map(listings.map((listing) => [listing.variant?.id ?? 0, listing.variant])).values())
+  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(variantOptions.length > 1 ? variantOptions[0]?.id ?? null : null)
+  const selectedListings = selectedVariantId === null ? listings : listings.filter((listing) => (listing.variant?.id ?? 0) === selectedVariantId)
 
   function addToCart(listing: ProductListing) {
     upsertLine({
       listingId: listing.id,
       distributorId: listing.distributor.id,
       distributorName: listing.distributor.name,
-      medicineName: `${medicine.name}${medicine.strength ? ` ${medicine.strength}` : ''}`,
+      medicineName: `${medicine.name}${medicine.strength ? ` ${medicine.strength}` : ''}${listing.variant ? ` · ${listing.variant.size}` : ''}`,
       unitPrice: listing.unitPrice,
       minOrderQuantity: listing.minOrderQuantity,
       available: listing.available,
@@ -78,13 +82,25 @@ export function ProductDetail({
             ].map(([label, value]) => value ? <div key={label}><dt className="text-muted-foreground">{label}</dt><dd className="mt-0.5 font-medium">{value}</dd></div> : null)}
           </dl>
           {medicine.description ? <p className="mt-5 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{medicine.description}</p> : null}
+          {variantOptions.length > 1 ? (
+            <div className="mt-6">
+              <p className="text-sm font-medium">Choose size</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {variantOptions.map((variant) => variant ? (
+                  <button key={variant.id} type="button" onClick={() => setSelectedVariantId(variant.id)} className={`rounded-md border px-3 py-2 text-sm ${selectedVariantId === variant.id ? 'border-primary bg-primary/10 font-semibold' : 'border-border hover:bg-muted'}`}>
+                    {variant.size}{variant.sku ? ` · ${variant.sku}` : ''}
+                  </button>
+                ) : null)}
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 
       <section>
         <h2 className="text-xl font-semibold">Available from distributors</h2>
         <div className="mt-3 divide-y divide-border rounded-xl border border-border">
-          {listings.length ? listings.map((listing) => (
+          {selectedListings.length ? selectedListings.map((listing) => (
             <div key={listing.id} className="flex flex-wrap items-center justify-between gap-4 p-4">
               <div>
                 <p className="font-medium">{listing.distributor.name}</p>
